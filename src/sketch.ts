@@ -36,7 +36,7 @@ const sketch = (p5: P5) => {
 
     for (let i = 0; i < 12; i++) {
       if (i <= 5) {
-        const path = `../assets/pieces/black/${pieces[i]}_black.png`;
+        const path = `./assets/pieces/black/${pieces[i]}_black.png`;
         darkPieces.images.push({
           image: p5.loadImage(path),
           path,
@@ -45,7 +45,7 @@ const sketch = (p5: P5) => {
       } else {
         let piece = i - 6;
 
-        const path = `../assets/pieces/white/${pieces[piece]}_white.png`;
+        const path = `./assets/pieces/white/${pieces[piece]}_white.png`;
 
         whitePieces.images.push({
           image: p5.loadImage(path),

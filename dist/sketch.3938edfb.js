@@ -21985,7 +21985,7 @@ var sketch = function sketch(p5) {
 
     for (var i = 0; i < 12; i++) {
       if (i <= 5) {
-        var path = "../assets/pieces/black/" + pieces[i] + "_black.png";
+        var path = "./assets/pieces/black/" + pieces[i] + "_black.png";
         exports.darkPieces.images.push({
           image: p5.loadImage(path),
           path: path,
@@ -21993,7 +21993,7 @@ var sketch = function sketch(p5) {
         });
       } else {
         var piece = i - 6;
-        var path = "../assets/pieces/white/" + pieces[piece] + "_white.png";
+        var path = "./assets/pieces/white/" + pieces[piece] + "_white.png";
         exports.whitePieces.images.push({
           image: p5.loadImage(path),
           path: path,
@@ -22062,7 +22062,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "46865" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "42445" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
