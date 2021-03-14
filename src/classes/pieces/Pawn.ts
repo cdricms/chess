@@ -8,9 +8,11 @@ export default class Pawn extends Piece {
     readonly color: "black" | "white",
     readonly position: { file: file; rank: number },
     readonly size: number,
-    readonly square: Square
+    readonly square: Square,
+
+    readonly symbol: string
   ) {
-    super("pawn", square, color, position, size);
+    super("pawn", square, symbol, color, position, size);
   }
 
   private frontMove() {

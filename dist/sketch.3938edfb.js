@@ -21380,7 +21380,7 @@ exports.default = Grid;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.pieces = void 0;
+exports.pieces = exports.pieceSelected = void 0;
 
 var Grid_1 = require("../Grid");
 
@@ -21388,15 +21388,16 @@ var sketch_1 = require("../../sketch");
 
 var sketch_2 = require("../../sketch");
 
-var pieceSelected = null;
+exports.pieceSelected = null;
 exports.pieces = [];
 
 var Piece =
 /** @class */
 function () {
-  function Piece(type, square, color, position, size) {
+  function Piece(type, square, symbol, color, position, size) {
     this.type = type;
     this.square = square;
+    this.symbol = symbol;
     this.color = color;
     this.position = position;
     this.size = size;
@@ -21418,7 +21419,7 @@ function () {
   Piece.prototype.show = function () {
     var _this = this;
 
-    if (pieceSelected === this) {
+    if (exports.pieceSelected === this) {
       sketch_2.p5.push();
       sketch_2.p5.noStroke();
       sketch_2.p5.fill(0, 200, 0, 150);
@@ -21482,8 +21483,8 @@ function () {
     }).image;
   };
 
-  Piece.prototype.hitbox = function (mousex, mousey) {
-    return mousex > this.square.coords.i * this.square.size && mousex < this.square.coords.i * this.square.size + this.square.size && mousey > this.square.coords.j * this.square.size && mousey < this.square.coords.j * this.square.size + this.square.size;
+  Piece.prototype.hitbox = function (mousex, mousey, square) {
+    return mousex > square.coords.i * square.size && mousex < square.coords.i * square.size + square.size && mousey > square.coords.j * square.size && mousey < square.coords.j * square.size + square.size;
   };
 
   Piece.prototype.combineMoves = function () {
@@ -21491,14 +21492,32 @@ function () {
   };
 
   Piece.prototype.clickedOn = function (mousex, mousey) {
-    var hb = this.hitbox(mousex, mousey);
+    var hb = this.hitbox(mousex, mousey, this.square);
 
     if (hb) {
-      pieceSelected = this;
+      exports.pieceSelected = this;
       console.log(this);
     } else {
-      if (pieceSelected === this) pieceSelected = null;
+      if (exports.pieceSelected === this) exports.pieceSelected = null;
     }
+  };
+
+  Piece.prototype.clickOnSquare = function (mousex, mousey, fen) {
+    var newSquare = null;
+
+    if (this.availablesMoves.length > 0) {
+      for (var _i = 0, _a = this.availablesMoves; _i < _a.length; _i++) {
+        var move = _a[_i];
+        var hb = this.hitbox(mousex, mousey, move);
+        if (hb) newSquare = move;
+      }
+    }
+
+    if (newSquare) this.changeSquare(newSquare, fen);
+  };
+
+  Piece.prototype.changeSquare = function (newSquare, fen) {
+    fen.updateFen(newSquare, this);
   };
 
   return Piece;
@@ -21724,13 +21743,14 @@ var Bishop =
 function (_super) {
   __extends(Bishop, _super);
 
-  function Bishop(color, position, size, square) {
-    var _this = _super.call(this, "bishop", square, color, position, size) || this;
+  function Bishop(color, position, size, square, symbol) {
+    var _this = _super.call(this, "bishop", square, symbol, color, position, size) || this;
 
     _this.color = color;
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.symbol = symbol;
     return _this;
   }
 
@@ -21815,13 +21835,14 @@ var King =
 function (_super) {
   __extends(King, _super);
 
-  function King(color, position, size, square) {
-    var _this = _super.call(this, "king", square, color, position, size) || this;
+  function King(color, position, size, square, symbol) {
+    var _this = _super.call(this, "king", square, symbol, color, position, size) || this;
 
     _this.color = color;
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.symbol = symbol;
     return _this;
   }
 
@@ -21908,13 +21929,14 @@ var Knight =
 function (_super) {
   __extends(Knight, _super);
 
-  function Knight(color, position, size, square) {
-    var _this = _super.call(this, "knight", square, color, position, size) || this;
+  function Knight(color, position, size, square, symbol) {
+    var _this = _super.call(this, "knight", square, symbol, color, position, size) || this;
 
     _this.color = color;
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.symbol = symbol;
     _this.availablesMoves = _this.move();
     return _this;
   }
@@ -21990,13 +22012,14 @@ var Pawn =
 function (_super) {
   __extends(Pawn, _super);
 
-  function Pawn(color, position, size, square) {
-    var _this = _super.call(this, "pawn", square, color, position, size) || this;
+  function Pawn(color, position, size, square, symbol) {
+    var _this = _super.call(this, "pawn", square, symbol, color, position, size) || this;
 
     _this.color = color;
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.symbol = symbol;
     return _this;
   }
 
@@ -22092,13 +22115,14 @@ var Queen =
 function (_super) {
   __extends(Queen, _super);
 
-  function Queen(color, position, size, square) {
-    var _this = _super.call(this, "queen", square, color, position, size) || this;
+  function Queen(color, position, size, square, symbol) {
+    var _this = _super.call(this, "queen", square, symbol, color, position, size) || this;
 
     _this.color = color;
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.symbol = symbol;
     return _this;
   }
 
@@ -22190,13 +22214,14 @@ var Rook =
 function (_super) {
   __extends(Rook, _super);
 
-  function Rook(color, position, size, square) {
-    var _this = _super.call(this, "rook", square, color, position, size) || this;
+  function Rook(color, position, size, square, symbol) {
+    var _this = _super.call(this, "rook", square, symbol, color, position, size) || this;
 
     _this.color = color;
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.symbol = symbol;
     return _this;
   }
 
@@ -22304,7 +22329,7 @@ function () {
           // (If Upper case: White; if lower case: black)
           var pieceColor = symbol === symbol.toUpperCase() ? "white" : "black"; // We check also what type of piece it is based on letter, see the map above.
 
-          var Piece = this.pieceTypeFromSymbol.get(symbol.toLowerCase()); // We create the piece at the right square
+          var Piece_2 = this.pieceTypeFromSymbol.get(symbol.toLowerCase()); // We create the piece at the right square
           // The first iterations, if initial position:
           // t (0) * 8 + file (0) = 0
           // t (0) * 8 + file (1) = 1
@@ -22314,10 +22339,10 @@ function () {
           // ...
 
           var square = squares[t * 8 + file];
-          var piece = new Piece(pieceColor, {
+          var piece = new Piece_2(pieceColor, {
             file: Grid_1.LETTERS[file],
             rank: rank + 1
-          }, this.size, square);
+          }, this.size, square, symbol);
           square.piece = piece;
           Piece_1.pieces.push(piece);
           file++;
@@ -22326,8 +22351,8 @@ function () {
     }
   };
 
-  FEN.prototype.updateFen = function (squares) {
-    console.log(squares);
+  FEN.prototype.updateFen = function (newSquare, piece) {
+    console.log(newSquare, piece);
   };
 
   return FEN;
@@ -22419,6 +22444,7 @@ var sketch = function sketch(p5) {
   };
 
   p5.mousePressed = function () {
+    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
     Piece_1.pieces.forEach(function (piece) {
       piece.clickedOn(p5.mouseX, p5.mouseY);
     });
@@ -22454,7 +22480,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "39207" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "35381" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -4,7 +4,7 @@ import Grid from "./classes/Grid";
 import Square from "./classes/Square";
 import { pieceType, image } from "./interfaces/pieces";
 import FEN from "./utils/fen";
-import { pieces } from "./classes/pieces/Piece";
+import { pieces, pieceSelected } from "./classes/pieces/Piece";
 
 export const blackPieces: {
   images: image[];
@@ -86,6 +86,7 @@ const sketch = (p5: P5) => {
   };
 
   p5.mousePressed = () => {
+    if (pieceSelected) pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
     pieces.forEach((piece) => {
       piece.clickedOn(p5.mouseX, p5.mouseY);
     });

@@ -5,8 +5,9 @@ import { image, pieceType } from "../../interfaces/pieces";
 import { blackPieces, whitePieces } from "../../sketch";
 import { p5 as pF } from "../../sketch";
 import Square from "../Square";
+import FEN from "../../utils/fen";
 
-let pieceSelected: null | Piece = null;
+export let pieceSelected: null | Piece = null;
 export const pieces: Piece[] = [];
 
 export default class Piece {
@@ -18,6 +19,7 @@ export default class Piece {
   constructor(
     readonly type: pieceType,
     readonly square: Square,
+    readonly symbol: string,
     readonly color?: "black" | "white",
     readonly position?: { file: file; rank: number; fileNumber?: number },
     readonly size?: number
@@ -109,12 +111,12 @@ export default class Piece {
       .image;
   }
 
-  private hitbox(mousex: number, mousey: number) {
+  private hitbox(mousex: number, mousey: number, square: Square) {
     return (
-      mousex > this.square.coords.i * this.square.size &&
-      mousex < this.square.coords.i * this.square.size! + this.square.size &&
-      mousey > this.square.coords.j * this.square.size! &&
-      mousey < this.square.coords.j * this.square.size! + this.square.size
+      mousex > square.coords.i * square.size &&
+      mousex < square.coords.i * square.size! + square.size &&
+      mousey > square.coords.j * square.size! &&
+      mousey < square.coords.j * square.size! + square.size
     );
   }
 
@@ -123,7 +125,7 @@ export default class Piece {
   }
 
   public clickedOn(mousex: number, mousey: number) {
-    const hb = this.hitbox(mousex, mousey);
+    const hb = this.hitbox(mousex, mousey, this.square);
 
     if (hb) {
       pieceSelected = this;
@@ -131,5 +133,22 @@ export default class Piece {
     } else {
       if (pieceSelected === this) pieceSelected = null;
     }
+  }
+  public clickOnSquare(mousex: number, mousey: number, fen: FEN) {
+    let newSquare: Square | null = null;
+
+    if (this.availablesMoves.length > 0) {
+      for (let move of this.availablesMoves) {
+        const hb = this.hitbox(mousex, mousey, move);
+
+        if (hb) newSquare = move;
+      }
+    }
+
+    if (newSquare) this.changeSquare(newSquare, fen);
+  }
+
+  private changeSquare(newSquare: Square, fen: FEN) {
+    fen.updateFen(newSquare, this);
   }
 }

@@ -1,9 +1,9 @@
-import { LETTERS } from "../classes/Grid";
+import { LETTERS, SQUARES } from "../classes/Grid";
 import Bishop from "../classes/pieces/Bishop";
 import King from "../classes/pieces/King";
 import Knight from "../classes/pieces/Knight";
 import Pawn from "../classes/pieces/Pawn";
-import { pieces } from "../classes/pieces/Piece";
+import Piece, { pieces } from "../classes/pieces/Piece";
 import Queen from "../classes/pieces/Queen";
 import Rook from "../classes/pieces/Rook";
 import Square from "../classes/Square";
@@ -98,7 +98,8 @@ export default class FEN {
             pieceColor,
             { file: LETTERS[file], rank: rank + 1 },
             this.size,
-            square
+            square,
+            symbol
           );
           square.piece = piece;
           pieces.push(piece);
@@ -108,7 +109,7 @@ export default class FEN {
     }
   }
 
-  public updateFen(squares: Square[]) {
-    console.log(squares);
+  public updateFen(newSquare: Square, piece: Piece) {
+    console.log(newSquare, piece);
   }
 }

@@ -8,9 +8,11 @@ export default class Rook extends Piece {
     readonly color: "black" | "white",
     readonly position: { file: file; rank: number },
     readonly size: number,
-    readonly square: Square
+    readonly square: Square,
+
+    readonly symbol: string
   ) {
-    super("rook", square, color, position, size);
+    super("rook", square, symbol, color, position, size);
   }
 
   private verticalAndHorizontal() {
