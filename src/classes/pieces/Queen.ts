@@ -22,10 +22,22 @@ export default class Queen extends Piece {
     return { topLeft, topRight, bottomLeft, bottomRight };
   }
 
+  private verticalAndHorizontal() {
+    const moves: Square[] = [];
+    return moves;
+  }
+
   public combineMoves() {
     const { topLeft, topRight, bottomLeft, bottomRight } = this.diagonal();
+    const vAndh = this.verticalAndHorizontal();
 
-    const moves = [...topLeft, ...topRight, ...bottomLeft, ...bottomRight];
+    const moves = [
+      ...topLeft,
+      ...topRight,
+      ...bottomLeft,
+      ...bottomRight,
+      ...vAndh
+    ];
 
     this.availablesMoves = moves;
 

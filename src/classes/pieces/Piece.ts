@@ -25,7 +25,7 @@ export default class Piece {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
     this.history = [this.position!];
-    this.availablesMoves = this.combineMoves();
+    this.availablesMoves = [];
     this.position!.fileNumber = this.getFileNumber();
   }
 
@@ -93,7 +93,8 @@ export default class Piece {
     for (let move of moves) {
       if (!move.piece) possibleMoves.push(move);
       else {
-        if (move.piece.color !== this.color) possibleMoves.push(move);
+        if (move.piece.color !== this.color && move.piece.type !== "king")
+          possibleMoves.push(move);
       }
     }
 

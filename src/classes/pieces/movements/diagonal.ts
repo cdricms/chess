@@ -13,7 +13,8 @@ export default function diagonalMove(this: Piece) {
       const square = rank[piece.drawingCoords.i + signRow * tL];
       if (!square) break;
       if (square.piece) {
-        if (square.piece!.color === piece.color) break;
+        if (square.piece!.color === piece.color || square.piece.type === "king")
+          break;
         else {
           m.push(square);
           sq.push(square);

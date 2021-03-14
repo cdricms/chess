@@ -15,7 +15,7 @@ export default class FEN {
 
   private currentFen =
     // "rnbqkbnr/pppppppp/8/3n3/8/3n3/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    "b6b/8/8/8/4q3/8/8/B6B w KQkq - 0 1";
+    "b6b/8/8/8/r2Kq3/2k5/8/B6B w KQkq - 0 1";
 
   private fenBoard = this.getFenBoard();
 

@@ -21269,6 +21269,7 @@ function () {
     // Draws the Square at the right place
     sketch_1.p5.push();
     if (this.color === "black") sketch_1.p5.fill(0, 0, 0);else sketch_1.p5.fill(255, 255, 255);
+    sketch_1.p5.noStroke();
     sketch_1.p5.rect(this.coords.i * this.size, this.coords.j * this.size, this.size, this.size);
     sketch_1.p5.pop(); // Shows the coordinates, based on boolean
 
@@ -21402,7 +21403,7 @@ function () {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
     this.history = [this.position];
-    this.availablesMoves = this.combineMoves();
+    this.availablesMoves = [];
     this.position.fileNumber = this.getFileNumber();
   }
 
@@ -21465,7 +21466,7 @@ function () {
     for (var _i = 0, moves_1 = moves; _i < moves_1.length; _i++) {
       var move = moves_1[_i];
       if (!move.piece) possibleMoves.push(move);else {
-        if (move.piece.color !== this.color) possibleMoves.push(move);
+        if (move.piece.color !== this.color && move.piece.type !== "king") possibleMoves.push(move);
       }
     }
 
@@ -21526,7 +21527,7 @@ function diagonalMove() {
       if (!square) break;
 
       if (square.piece) {
-        if (square.piece.color === piece.color) break;else {
+        if (square.piece.color === piece.color || square.piece.type === "king") break;else {
           m.push(square);
           sq.push(square);
           break;
@@ -21553,8 +21554,80 @@ function diagonalMove() {
 }
 
 exports.default = diagonalMove;
+},{"../../../sketch":"sketch.ts"}],"classes/pieces/movements/horizontal.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var sketch_1 = require("../../../sketch");
+
+function horizontal(piece, sign) {
+  var sq = [];
+
+  for (var i = 1; i < 9; i++) {
+    var rank = sketch_1.grid.grid[piece.position.rank];
+    if (rank === undefined) break;
+    var square = rank[piece.position.fileNumber + sign * i];
+    if (square === undefined) break;
+
+    if (square.piece) {
+      if (square.piece.color === piece.color || square.piece.type === "king") break;else {
+        sq.push(square);
+        break;
+      }
+    }
+
+    sq.push(square);
+  }
+
+  return sq;
+}
+
+exports.default = horizontal;
+},{"../../../sketch":"sketch.ts"}],"classes/pieces/movements/vertical.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var sketch_1 = require("../../../sketch");
+
+function vertical(piece, sign) {
+  var sq = [];
+
+  for (var i = 1; i < 9; i++) {
+    var rank = sketch_1.grid.grid[piece.position.rank + sign * i];
+    if (rank === undefined) break;
+    var square = rank[piece.position.fileNumber];
+    if (square === undefined) break;
+
+    if (square.piece) {
+      if (square.piece.color === piece.color || square.piece.type === "king") break;else {
+        sq.push(square);
+        break;
+      }
+    }
+
+    sq.push(square);
+  }
+
+  return sq;
+}
+
+exports.default = vertical;
 },{"../../../sketch":"sketch.ts"}],"classes/pieces/movements/moves.ts":[function(require,module,exports) {
 "use strict";
+
+var __spreadArray = this && this.__spreadArray || function (to, from) {
+  for (var i = 0, il = from.length, j = to.length; i < il; i++, j++) {
+    to[j] = from[i];
+  }
+
+  return to;
+};
 
 var __importDefault = this && this.__importDefault || function (mod) {
   return mod && mod.__esModule ? mod : {
@@ -21565,17 +21638,35 @@ var __importDefault = this && this.__importDefault || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.queenMoves = exports.bishopMoves = void 0;
+exports.rookMoves = exports.queenMoves = exports.bishopMoves = void 0;
 
 var diagonal_1 = __importDefault(require("./diagonal"));
+
+var horizontal_1 = __importDefault(require("./horizontal"));
+
+var vertical_1 = __importDefault(require("./vertical"));
+
+function verticalAndHorizontal() {
+  var m = [];
+  var vertical1 = vertical_1.default(this, -1);
+  var vertical2 = vertical_1.default(this, 1);
+  var horizontal1 = horizontal_1.default(this, -1);
+  var horizontal2 = horizontal_1.default(this, 1);
+  m.push.apply(m, __spreadArray(__spreadArray(__spreadArray(__spreadArray([], vertical1), vertical2), horizontal1), horizontal2));
+  return m;
+}
 
 exports.bishopMoves = {
   diagonal: diagonal_1.default
 };
 exports.queenMoves = {
-  diagonal: diagonal_1.default
+  diagonal: diagonal_1.default,
+  verticalAndHorizontal: verticalAndHorizontal
 };
-},{"./diagonal":"classes/pieces/movements/diagonal.ts"}],"classes/pieces/Bishop.ts":[function(require,module,exports) {
+exports.rookMoves = {
+  verticalAndHorizontal: verticalAndHorizontal
+};
+},{"./diagonal":"classes/pieces/movements/diagonal.ts","./horizontal":"classes/pieces/movements/horizontal.ts","./vertical":"classes/pieces/movements/vertical.ts"}],"classes/pieces/Bishop.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -21717,6 +21808,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var Piece_1 = __importDefault(require("./Piece"));
 
+var sketch_1 = require("../../sketch");
+
 var King =
 /** @class */
 function (_super) {
@@ -21732,11 +21825,40 @@ function (_super) {
     return _this;
   }
 
+  King.prototype.moves = function () {
+    var _a, _b;
+
+    var moves = [];
+    var file = this.square.coords.i;
+    var rank = this.square.coords.j;
+    var g = sketch_1.grid.grid;
+
+    for (var j = -1; j <= 1; j++) {
+      for (var i = -1; i <= 1; i++) {
+        if (rank + j > -1 && rank + j < g.length && file + i > -1 && file + i < g[file].length) {
+          var square = g[rank + j][file + i];
+
+          if (!(i === 0 && j === 0)) {
+            if (((_a = square.piece) === null || _a === void 0 ? void 0 : _a.color) !== this.color && ((_b = square.piece) === null || _b === void 0 ? void 0 : _b.type) !== "king") moves.push(square);
+          }
+        }
+      }
+    }
+
+    return moves;
+  };
+
+  King.prototype.combineMoves = function () {
+    var moves = this.moves();
+    this.availablesMoves = moves;
+    return moves;
+  };
+
   return King;
 }(Piece_1.default);
 
 exports.default = King;
-},{"./Piece":"classes/pieces/Piece.ts"}],"classes/pieces/Knight.ts":[function(require,module,exports) {
+},{"./Piece":"classes/pieces/Piece.ts","../../sketch":"sketch.ts"}],"classes/pieces/Knight.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -21993,6 +22115,11 @@ function (_super) {
     };
   };
 
+  Queen.prototype.verticalAndHorizontal = function () {
+    var moves = [];
+    return moves;
+  };
+
   Queen.prototype.combineMoves = function () {
     var _a = this.diagonal(),
         topLeft = _a.topLeft,
@@ -22000,7 +22127,9 @@ function (_super) {
         bottomLeft = _a.bottomLeft,
         bottomRight = _a.bottomRight;
 
-    var moves = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], topLeft), topRight), bottomLeft), bottomRight);
+    var vAndh = this.verticalAndHorizontal();
+
+    var moves = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], topLeft), topRight), bottomLeft), bottomRight), vAndh);
 
     this.availablesMoves = moves;
     return moves;
@@ -22054,6 +22183,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var Piece_1 = __importDefault(require("./Piece"));
 
+var moves_1 = require("./movements/moves");
+
 var Rook =
 /** @class */
 function (_super) {
@@ -22069,11 +22200,23 @@ function (_super) {
     return _this;
   }
 
+  Rook.prototype.verticalAndHorizontal = function () {
+    var m = [];
+    return m;
+  };
+
+  Rook.prototype.combineMoves = function () {
+    var moves = this.verticalAndHorizontal();
+    this.availablesMoves = moves;
+    return moves;
+  };
+
   return Rook;
 }(Piece_1.default);
 
 exports.default = Rook;
-},{"./Piece":"classes/pieces/Piece.ts"}],"utils/fen.ts":[function(require,module,exports) {
+Object.assign(Rook.prototype, moves_1.rookMoves);
+},{"./Piece":"classes/pieces/Piece.ts","./movements/moves":"classes/pieces/movements/moves.ts"}],"utils/fen.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -22109,7 +22252,7 @@ function () {
   function FEN(size) {
     this.size = size;
     this.currentFen = // "rnbqkbnr/pppppppp/8/3n3/8/3n3/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    "b6b/8/8/8/4q3/8/8/B6B w KQkq - 0 1";
+    "b6b/8/8/8/r2Kq3/2k5/8/B6B w KQkq - 0 1";
     this.fenBoard = this.getFenBoard();
     this.move = this.fen.split(" ")[1];
     this.permissions = this.fen.split(" ")[2];
@@ -22311,7 +22454,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45735" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "39207" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

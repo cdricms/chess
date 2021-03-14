@@ -52,7 +52,7 @@ export default class Square {
     p5.push();
     if (this.color === "black") p5.fill(0, 0, 0);
     else p5.fill(255, 255, 255);
-
+    p5.noStroke();
     p5.rect(
       this.coords.i * this.size,
       this.coords.j * this.size,
