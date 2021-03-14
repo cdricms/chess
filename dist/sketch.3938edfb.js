@@ -21238,10 +21238,11 @@ var sketch_1 = require("../sketch");
 var Square =
 /** @class */
 function () {
-  function Square(color, coords, size) {
+  function Square(color, coords, size, index) {
     this.color = color;
     this.coords = coords;
-    this.size = size; // The right coordinates, so the square can be drawn at the right spot
+    this.size = size;
+    this.index = index; // The right coordinates, so the square can be drawn at the right spot
 
     this.piece = null;
   }
@@ -21320,7 +21321,7 @@ var Square_1 = __importDefault(require("./Square"));
 exports.LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 var GRID_COLOR = [0, 1, 0, 1, 0, 1, 0, 1];
 exports.SQUARES = [];
-exports.SHOW_COORDS = false;
+exports.SHOW_COORDS = true;
 
 var Grid =
 /** @class */
@@ -21345,6 +21346,8 @@ function () {
       grid[rank] = new Array(8);
     }
 
+    var index = 0;
+
     for (var rank = 0; rank < grid.length; rank++) {
       GRID_COLOR.reverse();
 
@@ -21357,8 +21360,9 @@ function () {
           rank: j[rank] + 1,
           i: file_1,
           j: rank
-        }, this.size / 8);
+        }, this.size / 8, index);
         exports.SQUARES.push(grid[rank][file_1]);
+        index++;
       }
     }
 
@@ -21398,6 +21402,7 @@ function () {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
     this.history = [this.position];
+    this.availablesMoves = [];
   }
 
   Piece.prototype.show = function () {
@@ -21407,6 +21412,16 @@ function () {
       sketch_2.p5.fill(255, 0, 0, 150);
       sketch_2.p5.rect(this.square.coords.i * this.square.size, this.square.coords.j * this.square.size, this.square.size, this.square.size);
       sketch_2.p5.pop();
+
+      if (this.availablesMoves.length > 0) {
+        sketch_2.p5.push();
+        sketch_2.p5.noStroke();
+        sketch_2.p5.fill(255, 0, 0, 150);
+        this.availablesMoves.forEach(function (square) {
+          sketch_2.p5.rect(square.coords.i * square.size, square.coords.j * square.size, square.size, square.size);
+        });
+        sketch_2.p5.pop();
+      }
     }
 
     sketch_2.p5.push();
@@ -21426,6 +21441,19 @@ function () {
       i: i,
       j: j
     };
+  };
+
+  Piece.prototype.getPossibleMoves = function (moves) {
+    var possibleMoves = [];
+
+    for (var _i = 0, moves_1 = moves; _i < moves_1.length; _i++) {
+      var move = moves_1[_i];
+      if (!move.piece) possibleMoves.push(move);else {
+        if (move.piece.color !== this.color) possibleMoves.push(move);
+      }
+    }
+
+    return possibleMoves;
   };
 
   Piece.prototype.getImage = function () {
@@ -21622,6 +21650,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var Piece_1 = __importDefault(require("./Piece"));
 
+var Grid_1 = require("../Grid");
+
 var Knight =
 /** @class */
 function (_super) {
@@ -21634,14 +21664,26 @@ function (_super) {
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.availablesMoves = _this.move();
     return _this;
   }
+
+  Knight.prototype.move = function () {
+    var _this = this;
+
+    var m = Grid_1.SQUARES.filter(function (square) {
+      if (square.coords.i === _this.drawingCoords.i - 1 && square.coords.j === _this.drawingCoords.j - 2 || square.coords.i === _this.drawingCoords.i - 2 && square.coords.j === _this.drawingCoords.j - 1 || square.coords.i === _this.drawingCoords.i - 2 && square.coords.j === _this.drawingCoords.j + 1 || square.coords.i === _this.drawingCoords.i - 1 && square.coords.j === _this.drawingCoords.j + 2 || square.coords.i === _this.drawingCoords.i + 1 && square.coords.j === _this.drawingCoords.j - 2 || square.coords.i === _this.drawingCoords.i + 2 && square.coords.j === _this.drawingCoords.j - 1 || square.coords.i === _this.drawingCoords.i + 2 && square.coords.j === _this.drawingCoords.j + 1 || square.coords.i === _this.drawingCoords.i + 1 && square.coords.j === _this.drawingCoords.j + 2) {
+        return square;
+      }
+    });
+    return this.getPossibleMoves(m);
+  };
 
   return Knight;
 }(Piece_1.default);
 
 exports.default = Knight;
-},{"./Piece":"classes/pieces/Piece.ts"}],"classes/pieces/Pawn.ts":[function(require,module,exports) {
+},{"./Piece":"classes/pieces/Piece.ts","../Grid":"classes/Grid.ts"}],"classes/pieces/Pawn.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -21684,6 +21726,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var Piece_1 = __importDefault(require("./Piece"));
 
+var Grid_1 = require("../Grid");
+
 var Pawn =
 /** @class */
 function (_super) {
@@ -21696,14 +21740,39 @@ function (_super) {
     _this.position = position;
     _this.size = size;
     _this.square = square;
+    _this.availablesMoves = _this.frontMove();
+    console.log(_this.availablesMoves, _this);
     return _this;
   }
+
+  Pawn.prototype.frontMove = function () {
+    var order = this.color === "white" ? -1 : 1;
+    var moves = [];
+    var forwardSquare = Grid_1.SQUARES[this.square.index + 8 * order];
+    if (forwardSquare) moves.push(forwardSquare);
+
+    if (this.history.length === 1 && !forwardSquare.piece) {
+      var secondSquare = Grid_1.SQUARES[this.square.index + 16 * order];
+      console.log(secondSquare);
+      if (secondSquare && secondSquare.piece === null) moves.push(secondSquare);
+    } // const enemies: Square[] = [];
+    // const enemyOne = SQUARES[this.square.index + 7 * order];
+    // const enemyTwo = SQUARES[this.square.index + 9 * order];
+    // if (enemyOne.piece && enemyOne.piece.color !== this.color)
+    //   enemies.push(enemyOne);
+    // if (enemyTwo.piece && enemyTwo.piece.color !== this.color)
+    //   enemies.push(enemyTwo);
+    // moves.push(...enemies);
+
+
+    return moves;
+  };
 
   return Pawn;
 }(Piece_1.default);
 
 exports.default = Pawn;
-},{"./Piece":"classes/pieces/Piece.ts"}],"classes/pieces/Queen.ts":[function(require,module,exports) {
+},{"./Piece":"classes/pieces/Piece.ts","../Grid":"classes/Grid.ts"}],"classes/pieces/Queen.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -21862,7 +21931,7 @@ var FEN =
 function () {
   function FEN(size) {
     this.size = size;
-    this.currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    this.currentFen = "rnbqkbnr/pppppppp/8/3n3/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     this.fenBoard = this.getFenBoard();
     this.move = this.fen.split(" ")[1];
     this.permissions = this.fen.split(" ")[2];
@@ -21976,7 +22045,7 @@ exports.whitePieces = {
 };
 
 var sketch = function sketch(p5) {
-  var SIZE = 700;
+  var SIZE = 900;
   var grid;
   var fen;
 
@@ -22062,7 +22131,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59478" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62210" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

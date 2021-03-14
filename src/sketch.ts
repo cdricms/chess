@@ -19,7 +19,7 @@ export const whitePieces: {
 };
 
 const sketch = (p5: P5) => {
-  const SIZE = 700;
+  const SIZE = 900;
   let grid: Grid;
 
   let fen: FEN;

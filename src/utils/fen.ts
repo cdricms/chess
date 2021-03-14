@@ -14,7 +14,7 @@ export default class FEN {
   constructor(private size: number) {}
 
   private currentFen =
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    "rnbqkbnr/pppppppp/8/3n3/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
   private fenBoard = this.getFenBoard();
 

@@ -13,6 +13,7 @@ export default class Piece {
   drawingCoords: { i: number; j: number };
   image: p5.Image;
   history: { file: file; rank: number }[];
+  availablesMoves: Square[];
 
   constructor(
     readonly type: pieceType,
@@ -24,6 +25,7 @@ export default class Piece {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
     this.history = [this.position!];
+    this.availablesMoves = [];
   }
 
   public show() {
@@ -38,6 +40,22 @@ export default class Piece {
         this.square.size
       );
       pF.pop();
+
+      if (this.availablesMoves.length > 0) {
+        pF.push();
+        pF.noStroke();
+        pF.fill(255, 0, 0, 150);
+        this.availablesMoves.forEach((square) => {
+          pF.rect(
+            square.coords.i * square.size,
+            square.coords.j * square.size,
+            square.size,
+            square.size
+          );
+        });
+
+        pF.pop();
+      }
     }
 
     pF.push();
@@ -59,6 +77,19 @@ export default class Piece {
     const j = rankInverted[this.position!.rank - 1];
 
     return { i, j };
+  }
+
+  public getPossibleMoves(moves: Square[]) {
+    const possibleMoves = [];
+
+    for (let move of moves) {
+      if (!move.piece) possibleMoves.push(move);
+      else {
+        if (move.piece.color !== this.color) possibleMoves.push(move);
+      }
+    }
+
+    return possibleMoves;
   }
 
   private getImage() {

@@ -10,7 +10,8 @@ export default class Square {
   constructor(
     public color: "dark" | "white",
     public coords: GridCoordinates,
-    public size: number
+    public size: number,
+    readonly index: number
   ) {
     // The right coordinates, so the square can be drawn at the right spot
     this.piece = null;
