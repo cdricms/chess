@@ -5,7 +5,7 @@ import { SQUARES } from "../Grid";
 
 export default class Knight extends Piece {
   constructor(
-    readonly color: "dark" | "white",
+    readonly color: "black" | "white",
     readonly position: { file: file; rank: number },
     readonly size: number,
     readonly square: Square
@@ -40,5 +40,11 @@ export default class Knight extends Piece {
     });
 
     return this.getPossibleMoves(m);
+  }
+
+  public combineMoves() {
+    const moves = this.move();
+    this.availablesMoves = moves;
+    return moves;
   }
 }

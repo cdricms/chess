@@ -2,7 +2,7 @@ import p5 from "p5";
 import { LETTERS } from "../Grid";
 import { file } from "../../interfaces/grid";
 import { image, pieceType } from "../../interfaces/pieces";
-import { darkPieces, whitePieces } from "../../sketch";
+import { blackPieces, whitePieces } from "../../sketch";
 import { p5 as pF } from "../../sketch";
 import Square from "../Square";
 
@@ -18,21 +18,26 @@ export default class Piece {
   constructor(
     readonly type: pieceType,
     readonly square: Square,
-    readonly color?: "dark" | "white",
-    readonly position?: { file: file; rank: number },
+    readonly color?: "black" | "white",
+    readonly position?: { file: file; rank: number; fileNumber?: number },
     readonly size?: number
   ) {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
     this.history = [this.position!];
-    this.availablesMoves = [];
+    this.availablesMoves = this.combineMoves();
+    this.position!.fileNumber = this.getFileNumber();
+  }
+
+  private getFileNumber() {
+    return LETTERS.findIndex((letter) => letter === this.position!.file);
   }
 
   public show() {
     if (pieceSelected === this) {
       pF.push();
       pF.noStroke();
-      pF.fill(255, 0, 0, 150);
+      pF.fill(0, 200, 0, 150);
       pF.rect(
         this.square.coords.i * this.square.size,
         this.square.coords.j * this.square.size,
@@ -44,8 +49,11 @@ export default class Piece {
       if (this.availablesMoves.length > 0) {
         pF.push();
         pF.noStroke();
-        pF.fill(255, 0, 0, 150);
         this.availablesMoves.forEach((square) => {
+          pF.fill(255, 255, 0, 150);
+          if (square.piece && square.piece.color !== this.color) {
+            pF.fill(255, 0, 0, 150);
+          }
           pF.rect(
             square.coords.i * square.size,
             square.coords.j * square.size,
@@ -94,7 +102,7 @@ export default class Piece {
 
   private getImage() {
     const color: { images: image[] } =
-      this.color === "dark" ? darkPieces : whitePieces;
+      this.color === "black" ? blackPieces : whitePieces;
 
     return color.images.find((image: image) => image.piece === this.type)!
       .image;
@@ -109,11 +117,16 @@ export default class Piece {
     );
   }
 
+  public combineMoves() {
+    return [] as Square[];
+  }
+
   public clickedOn(mousex: number, mousey: number) {
     const hb = this.hitbox(mousex, mousey);
 
     if (hb) {
       pieceSelected = this;
+      console.log(this);
     } else {
       if (pieceSelected === this) pieceSelected = null;
     }

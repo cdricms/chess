@@ -6,7 +6,7 @@ import { pieceType, image } from "./interfaces/pieces";
 import FEN from "./utils/fen";
 import { pieces } from "./classes/pieces/Piece";
 
-export const darkPieces: {
+export const blackPieces: {
   images: image[];
 } = {
   images: []
@@ -18,9 +18,9 @@ export const whitePieces: {
   images: []
 };
 
+export let grid: Grid;
 const sketch = (p5: P5) => {
   const SIZE = 900;
-  let grid: Grid;
 
   let fen: FEN;
 
@@ -37,7 +37,7 @@ const sketch = (p5: P5) => {
     for (let i = 0; i < 12; i++) {
       if (i <= 5) {
         const path = `./assets/pieces/black/${pieces[i]}_black.png`;
-        darkPieces.images.push({
+        blackPieces.images.push({
           image: p5.loadImage(path),
           path,
           piece: pieces[i]
@@ -72,6 +72,8 @@ const sketch = (p5: P5) => {
 
     // console.log(grid);
 
+    pieces.forEach((piece) => piece.combineMoves());
+
     console.log(SQUARES);
   };
 
@@ -84,7 +86,9 @@ const sketch = (p5: P5) => {
   };
 
   p5.mousePressed = () => {
-    pieces.forEach((piece) => piece.clickedOn(p5.mouseX, p5.mouseY));
+    pieces.forEach((piece) => {
+      piece.clickedOn(p5.mouseX, p5.mouseY);
+    });
   };
 };
 

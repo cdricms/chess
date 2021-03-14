@@ -32,7 +32,7 @@ export default class Grid {
       GRID_COLOR.reverse();
       for (let file = 0; file < grid[rank].length; file++) {
         const fileLetter = LETTERS[file];
-        const color = GRID_COLOR[file] === 0 ? "dark" : "white";
+        const color = GRID_COLOR[file] === 0 ? "black" : "white";
 
         const j = [7, 6, 5, 4, 3, 2, 1, 0];
 

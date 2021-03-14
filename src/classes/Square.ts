@@ -8,7 +8,7 @@ export default class Square {
   piece: Piece | null;
 
   constructor(
-    public color: "dark" | "white",
+    public color: "black" | "white",
     public coords: GridCoordinates,
     public size: number,
     readonly index: number
@@ -50,7 +50,7 @@ export default class Square {
   public show() {
     // Draws the Square at the right place
     p5.push();
-    if (this.color === "dark") p5.fill(0, 0, 0);
+    if (this.color === "black") p5.fill(0, 0, 0);
     else p5.fill(255, 255, 255);
 
     p5.rect(
@@ -65,7 +65,7 @@ export default class Square {
     if (SHOW_COORDS) {
       p5.push();
 
-      if (this.color === "dark") p5.fill(255, 255, 255);
+      if (this.color === "black") p5.fill(255, 255, 255);
       else p5.fill(0, 0, 0);
       p5.text(
         `${this.coords.file}${this.coords.rank}`,
@@ -78,7 +78,7 @@ export default class Square {
 
     // Shows some coordinates
     p5.push();
-    if (this.color === "dark") p5.fill(255, 255, 255);
+    if (this.color === "black") p5.fill(255, 255, 255);
     else p5.fill(0, 0, 0);
     p5.textSize(15);
 

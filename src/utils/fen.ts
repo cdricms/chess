@@ -14,7 +14,8 @@ export default class FEN {
   constructor(private size: number) {}
 
   private currentFen =
-    "rnbqkbnr/pppppppp/8/3n3/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    // "rnbqkbnr/pppppppp/8/3n3/8/3n3/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    "b6b/8/8/8/4q3/8/8/B6B w KQkq - 0 1";
 
   private fenBoard = this.getFenBoard();
 
@@ -80,7 +81,8 @@ export default class FEN {
           // If there is piece
           // We check if the piece is black or white based on the case of the letter
           // (If Upper case: White; if lower case: black)
-          const pieceColor = symbol === symbol.toUpperCase() ? "white" : "dark";
+          const pieceColor =
+            symbol === symbol.toUpperCase() ? "white" : "black";
           // We check also what type of piece it is based on letter, see the map above.
           const Piece = this.pieceTypeFromSymbol.get(symbol.toLowerCase())!;
           // We create the piece at the right square
