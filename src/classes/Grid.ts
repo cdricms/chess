@@ -8,7 +8,7 @@ const GRID_COLOR = [0, 1, 0, 1, 0, 1, 0, 1];
 
 export const SQUARES: Square[] = [];
 
-export let SHOW_COORDS = false;
+export let SHOW_COORDS = true;
 
 export default class Grid {
   grid: Square[][];
@@ -26,21 +26,24 @@ export default class Grid {
   private initGrid() {
     const grid = new Array(8);
     for (let rank = 0; rank < grid.length; rank++) grid[rank] = new Array(8);
+    let index = 0;
 
     for (let rank = 0; rank < grid.length; rank++) {
       GRID_COLOR.reverse();
       for (let file = 0; file < grid[rank].length; file++) {
         const fileLetter = LETTERS[file];
-        const color = GRID_COLOR[file] === 0 ? "dark" : "white";
+        const color = GRID_COLOR[file] === 0 ? "black" : "white";
 
         const j = [7, 6, 5, 4, 3, 2, 1, 0];
 
         grid[rank][file] = new Square(
           color,
           { file: fileLetter, rank: j[rank] + 1, i: file, j: rank },
-          this.size / 8
+          this.size / 8,
+          index
         );
         SQUARES.push(grid[rank][file]);
+        index++;
       }
     }
 

@@ -1,36 +1,46 @@
 import p5 from "p5";
-import { LETTERS } from "../Grid";
+import { LETTERS, SQUARES } from "../Grid";
 import { file } from "../../interfaces/grid";
 import { image, pieceType } from "../../interfaces/pieces";
-import { darkPieces, whitePieces } from "../../sketch";
+import { blackPieces, whitePieces } from "../../sketch";
 import { p5 as pF } from "../../sketch";
 import Square from "../Square";
+import FEN from "../../utils/fen";
 
-let pieceSelected: null | Piece = null;
-export const pieces: Piece[] = [];
+export let pieceSelected: null | Piece = null;
+export let pieces: Piece[] = [];
+export let LAST_MOVES: Square[] = [];
 
 export default class Piece {
   drawingCoords: { i: number; j: number };
   image: p5.Image;
   history: { file: file; rank: number }[];
+  availablesMoves: Square[];
 
   constructor(
     readonly type: pieceType,
-    readonly square: Square,
-    readonly color?: "dark" | "white",
-    readonly position?: { file: file; rank: number },
+    public square: Square,
+    readonly symbol: string,
+    readonly color?: "black" | "white",
+    readonly position?: { file: file; rank: number; fileNumber?: number },
     readonly size?: number
   ) {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
-    this.history = [this.position!];
+    this.availablesMoves = [];
+    this.position!.fileNumber = this.getFileNumber();
+    this.history = [{ ...this.position! }];
+  }
+
+  private getFileNumber() {
+    return LETTERS.findIndex((letter) => letter === this.position!.file);
   }
 
   public show() {
     if (pieceSelected === this) {
       pF.push();
       pF.noStroke();
-      pF.fill(255, 0, 0, 150);
+      pF.fill(0, 200, 0, 150);
       pF.rect(
         this.square.coords.i * this.square.size,
         this.square.coords.j * this.square.size,
@@ -38,6 +48,25 @@ export default class Piece {
         this.square.size
       );
       pF.pop();
+
+      if (this.availablesMoves.length > 0) {
+        pF.push();
+        pF.noStroke();
+        this.availablesMoves.forEach((square) => {
+          pF.fill(255, 255, 0, 150);
+          if (square.piece && square.piece.color !== this.color) {
+            pF.fill(255, 0, 0, 150);
+          }
+          pF.rect(
+            square.coords.i * square.size,
+            square.coords.j * square.size,
+            square.size,
+            square.size
+          );
+        });
+
+        pF.pop();
+      }
     }
 
     pF.push();
@@ -61,30 +90,97 @@ export default class Piece {
     return { i, j };
   }
 
+  public getPossibleMoves(moves: Square[]) {
+    const possibleMoves = [];
+
+    for (let move of moves) {
+      if (!move.piece) possibleMoves.push(move);
+      else {
+        if (move.piece.color !== this.color && move.piece.type !== "king")
+          possibleMoves.push(move);
+      }
+    }
+
+    return possibleMoves;
+  }
+
   private getImage() {
     const color: { images: image[] } =
-      this.color === "dark" ? darkPieces : whitePieces;
+      this.color === "black" ? blackPieces : whitePieces;
 
     return color.images.find((image: image) => image.piece === this.type)!
       .image;
   }
 
-  private hitbox(mousex: number, mousey: number) {
+  private hitbox(mousex: number, mousey: number, square: Square) {
     return (
-      mousex > this.square.coords.i * this.square.size &&
-      mousex < this.square.coords.i * this.square.size! + this.square.size &&
-      mousey > this.square.coords.j * this.square.size! &&
-      mousey < this.square.coords.j * this.square.size! + this.square.size
+      mousex > square.coords.i * square.size &&
+      mousex < square.coords.i * square.size! + square.size &&
+      mousey > square.coords.j * square.size! &&
+      mousey < square.coords.j * square.size! + square.size
     );
   }
 
+  public combineMoves() {
+    return [] as Square[];
+  }
+
   public clickedOn(mousex: number, mousey: number) {
-    const hb = this.hitbox(mousex, mousey);
+    const hb = this.hitbox(mousex, mousey, this.square);
 
     if (hb) {
-      pieceSelected = this;
-    } else {
-      if (pieceSelected === this) pieceSelected = null;
+      if (
+        !(
+          pieceSelected &&
+          pieceSelected.availablesMoves.find((square) => square === this.square)
+        )
+      )
+        pieceSelected = this;
     }
+  }
+
+  public clickOnSquare(mousex: number, mousey: number, fen: FEN) {
+    let newSquare: Square | null = null;
+
+    if (this.availablesMoves.length > 0) {
+      for (let move of this.availablesMoves) {
+        const hb = this.hitbox(mousex, mousey, move);
+
+        if (hb) newSquare = move;
+      }
+    }
+
+    if (newSquare) {
+      if (newSquare.piece) {
+        pieces = pieces.filter((piece) => piece !== newSquare!.piece);
+      }
+      this.changeSquare(newSquare, fen);
+    }
+  }
+
+  private changeSquare(newSquare: Square, fen: FEN) {
+    const fenBoard = fen.updateFenBoard(newSquare, this);
+    const newFen = fen.addRemains(fenBoard);
+    const oldSquare = this.square;
+
+    fen.fen = newFen;
+
+    this.drawingCoords = { i: newSquare.coords.i, j: newSquare.coords.j };
+    this.position!.file = newSquare.coords.file;
+    this.position!.rank = newSquare.coords.rank;
+    this.position!.fileNumber = this.getFileNumber();
+
+    this.square = newSquare;
+    this.square.piece = this;
+    oldSquare.piece = null;
+    this.history.push({ ...this.position! });
+    // console.log(this.square, oldSquare);
+    pieces.forEach((piece) => piece.combineMoves());
+
+    console.log(this);
+    pieceSelected = null;
+
+    document.getElementById("fen")!.innerHTML = "FEN: " + fen.fen;
+    LAST_MOVES = [oldSquare, newSquare];
   }
 }

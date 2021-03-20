@@ -4,9 +4,9 @@ import Grid from "./classes/Grid";
 import Square from "./classes/Square";
 import { pieceType, image } from "./interfaces/pieces";
 import FEN from "./utils/fen";
-import { pieces } from "./classes/pieces/Piece";
+import { LAST_MOVES, pieces, pieceSelected } from "./classes/pieces/Piece";
 
-export const darkPieces: {
+export const blackPieces: {
   images: image[];
 } = {
   images: []
@@ -18,9 +18,9 @@ export const whitePieces: {
   images: []
 };
 
+export let grid: Grid;
 const sketch = (p5: P5) => {
-  const SIZE = 700;
-  let grid: Grid;
+  const SIZE = 900;
 
   let fen: FEN;
 
@@ -37,7 +37,7 @@ const sketch = (p5: P5) => {
     for (let i = 0; i < 12; i++) {
       if (i <= 5) {
         const path = `./assets/pieces/black/${pieces[i]}_black.png`;
-        darkPieces.images.push({
+        blackPieces.images.push({
           image: p5.loadImage(path),
           path,
           piece: pieces[i]
@@ -72,19 +72,26 @@ const sketch = (p5: P5) => {
 
     // console.log(grid);
 
+    pieces.forEach((piece) => piece.combineMoves());
+
     console.log(SQUARES);
   };
 
   p5.draw = () => {
     grid.show();
+    LAST_MOVES.forEach((move) => (move.highlight = true));
     SQUARES.forEach((square: Square) => {
       square.piece?.show();
       square.showCheck();
+      if (!LAST_MOVES.find((move) => move === square)) square.highlight = false;
     });
   };
 
   p5.mousePressed = () => {
-    pieces.forEach((piece) => piece.clickedOn(p5.mouseX, p5.mouseY));
+    pieces.forEach((piece) => {
+      piece.clickedOn(p5.mouseX, p5.mouseY);
+    });
+    if (pieceSelected) pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
   };
 };
 

@@ -6,14 +6,17 @@ import Piece from "./pieces/Piece";
 
 export default class Square {
   piece: Piece | null;
+  highlight: boolean;
 
   constructor(
-    public color: "dark" | "white",
+    public color: "black" | "white",
     public coords: GridCoordinates,
-    public size: number
+    public size: number,
+    readonly index: number
   ) {
     // The right coordinates, so the square can be drawn at the right spot
     this.piece = null;
+    this.highlight = false;
   }
 
   public showCheck() {
@@ -49,9 +52,9 @@ export default class Square {
   public show() {
     // Draws the Square at the right place
     p5.push();
-    if (this.color === "dark") p5.fill(0, 0, 0);
+    if (this.color === "black") p5.fill(0, 0, 0);
     else p5.fill(255, 255, 255);
-
+    p5.noStroke();
     p5.rect(
       this.coords.i * this.size,
       this.coords.j * this.size,
@@ -60,11 +63,25 @@ export default class Square {
     );
     p5.pop();
 
+    if (this.highlight) {
+      p5.push();
+      p5.fill(255, 69, 0, 120);
+      p5.noStroke();
+      p5.rect(
+        this.coords.i * this.size,
+        this.coords.j * this.size,
+        this.size,
+        this.size
+      );
+
+      p5.pop();
+    }
+
     // Shows the coordinates, based on boolean
     if (SHOW_COORDS) {
       p5.push();
 
-      if (this.color === "dark") p5.fill(255, 255, 255);
+      if (this.color === "black") p5.fill(255, 255, 255);
       else p5.fill(0, 0, 0);
       p5.text(
         `${this.coords.file}${this.coords.rank}`,
@@ -77,7 +94,7 @@ export default class Square {
 
     // Shows some coordinates
     p5.push();
-    if (this.color === "dark") p5.fill(255, 255, 255);
+    if (this.color === "black") p5.fill(255, 255, 255);
     else p5.fill(0, 0, 0);
     p5.textSize(15);
 
