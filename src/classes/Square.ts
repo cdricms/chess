@@ -6,6 +6,7 @@ import Piece from "./pieces/Piece";
 
 export default class Square {
   piece: Piece | null;
+  highlight: boolean;
 
   constructor(
     public color: "black" | "white",
@@ -15,6 +16,7 @@ export default class Square {
   ) {
     // The right coordinates, so the square can be drawn at the right spot
     this.piece = null;
+    this.highlight = false;
   }
 
   public showCheck() {
@@ -60,6 +62,20 @@ export default class Square {
       this.size
     );
     p5.pop();
+
+    if (this.highlight) {
+      p5.push();
+      p5.fill(255, 69, 0, 120);
+      p5.noStroke();
+      p5.rect(
+        this.coords.i * this.size,
+        this.coords.j * this.size,
+        this.size,
+        this.size
+      );
+
+      p5.pop();
+    }
 
     // Shows the coordinates, based on boolean
     if (SHOW_COORDS) {

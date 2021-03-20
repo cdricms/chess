@@ -8,14 +8,13 @@ import Queen from "../classes/pieces/Queen";
 import Rook from "../classes/pieces/Rook";
 import Square from "../classes/Square";
 
-// Inspired and copied from Sebastian Lague: https://youtu.be/U4ogK0MIzqk?t=151
-
 export default class FEN {
   constructor(private size: number) {}
 
   private currentFen =
-    // "rnbqkbnr/pppppppp/8/3n3/8/3n3/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    "b6b/8/8/8/r2Kq3/2k5/8/B6B w KQkq - 0 1";
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
+  // "b6b/8/6q1/8/r2n4/2k5/8/B6B w KQkq - 0 1";
 
   private fenBoard = this.getFenBoard();
 
@@ -49,13 +48,14 @@ export default class FEN {
   set fen(fen: string) {
     this.currentFen = fen;
     this.fenBoard = this.getFenBoard();
-    // this.move = fen.split(" ")[1];
+    console.log(this.fenBoard, this.currentFen);
   }
 
   private getFenBoard() {
     return this.currentFen.split(" ")[0];
   }
 
+  // Inspired and copied from Sebastian Lague: https://youtu.be/U4ogK0MIzqk?t=151
   // Creates the pieces at the right squares based on the FEN
   public load(squares: Square[]) {
     // The FEN is read from left to right and from top to bottom (like reading a book), meaning from A8 to H1
@@ -109,7 +109,74 @@ export default class FEN {
     }
   }
 
-  public updateFen(newSquare: Square, piece: Piece) {
+  private transFenBoardToZeros(fenBoard: string[]) {
+    let translatedFen = fenBoard;
+
+    for (let sliceIndex = 0; sliceIndex < translatedFen.length; sliceIndex++) {
+      const slice = translatedFen[sliceIndex];
+      let newSlice = "";
+      for (let char = 0; char < slice.length; char++) {
+        if (parseInt(slice[char])) {
+          const num = parseInt(slice[char]);
+          let stringOf0 = "";
+          for (let a = 0; a < num; a++) stringOf0 += "0";
+
+          newSlice += stringOf0;
+        } else {
+          newSlice += slice[char];
+        }
+      }
+      translatedFen[sliceIndex] = newSlice;
+    }
+
+    return translatedFen;
+  }
+
+  private transFenBoard(newFen: string[]) {
+    let result = newFen;
+    for (let sliceIndex = 0; sliceIndex < newFen.length; sliceIndex++) {
+      let count = 0;
+      const slice = newFen[sliceIndex];
+      let newSlice = "";
+      for (let char = 0; char < slice.length; char++) {
+        if (slice[char] === "0") count++;
+        else {
+          if (count > 0) newSlice += count;
+          newSlice += slice[char];
+          count = 0;
+        }
+      }
+      if (count > 0) newSlice += count;
+      result[sliceIndex] = newSlice;
+    }
+
+    return result;
+  }
+
+  public updateFenBoard(newSquare: Square, piece: Piece) {
     console.log(newSquare, piece);
+
+    let transFen = this.transFenBoardToZeros(this.fenBoard.split("/"));
+    let fenPieceRank = transFen[piece.drawingCoords.j];
+    fenPieceRank =
+      fenPieceRank.substring(0, piece.drawingCoords.i) +
+      "0" +
+      fenPieceRank.substring(piece.drawingCoords.i + 1);
+    transFen[piece.drawingCoords.j] = fenPieceRank;
+
+    let newSquareRank = transFen[newSquare.coords.j];
+    newSquareRank =
+      newSquareRank.substring(0, newSquare.coords.i) +
+      piece.symbol +
+      newSquareRank.substring(newSquare.coords.i + 1);
+    transFen[newSquare.coords.j] = newSquareRank;
+
+    transFen = this.transFenBoard(transFen);
+
+    return transFen.join("/");
+  }
+
+  public addRemains(fenBoard: string) {
+    return `${fenBoard} ${this.move} ${this.permissions} ${this.enPassant} ${this.halfMoveClock} ${this.fullMove}`;
   }
 }

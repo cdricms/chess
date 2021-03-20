@@ -21245,6 +21245,7 @@ function () {
     this.index = index; // The right coordinates, so the square can be drawn at the right spot
 
     this.piece = null;
+    this.highlight = false;
   }
 
   Square.prototype.showCheck = function () {
@@ -21271,7 +21272,16 @@ function () {
     if (this.color === "black") sketch_1.p5.fill(0, 0, 0);else sketch_1.p5.fill(255, 255, 255);
     sketch_1.p5.noStroke();
     sketch_1.p5.rect(this.coords.i * this.size, this.coords.j * this.size, this.size, this.size);
-    sketch_1.p5.pop(); // Shows the coordinates, based on boolean
+    sketch_1.p5.pop();
+
+    if (this.highlight) {
+      sketch_1.p5.push();
+      sketch_1.p5.fill(255, 69, 0, 120);
+      sketch_1.p5.noStroke();
+      sketch_1.p5.rect(this.coords.i * this.size, this.coords.j * this.size, this.size, this.size);
+      sketch_1.p5.pop();
+    } // Shows the coordinates, based on boolean
+
 
     if (Grid_1.SHOW_COORDS) {
       sketch_1.p5.push();
@@ -21377,10 +21387,26 @@ exports.default = Grid;
 },{"./Square":"classes/Square.ts"}],"classes/pieces/Piece.ts":[function(require,module,exports) {
 "use strict";
 
+var __assign = this && this.__assign || function () {
+  __assign = Object.assign || function (t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+      s = arguments[i];
+
+      for (var p in s) {
+        if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+      }
+    }
+
+    return t;
+  };
+
+  return __assign.apply(this, arguments);
+};
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.pieces = exports.pieceSelected = void 0;
+exports.LAST_MOVES = exports.pieces = exports.pieceSelected = void 0;
 
 var Grid_1 = require("../Grid");
 
@@ -21390,6 +21416,7 @@ var sketch_2 = require("../../sketch");
 
 exports.pieceSelected = null;
 exports.pieces = [];
+exports.LAST_MOVES = [];
 
 var Piece =
 /** @class */
@@ -21403,9 +21430,9 @@ function () {
     this.size = size;
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
-    this.history = [this.position];
     this.availablesMoves = [];
     this.position.fileNumber = this.getFileNumber();
+    this.history = [__assign({}, this.position)];
   }
 
   Piece.prototype.getFileNumber = function () {
@@ -21492,13 +21519,14 @@ function () {
   };
 
   Piece.prototype.clickedOn = function (mousex, mousey) {
+    var _this = this;
+
     var hb = this.hitbox(mousex, mousey, this.square);
 
     if (hb) {
-      exports.pieceSelected = this;
-      console.log(this);
-    } else {
-      if (exports.pieceSelected === this) exports.pieceSelected = null;
+      if (!(exports.pieceSelected && exports.pieceSelected.availablesMoves.find(function (square) {
+        return square === _this.square;
+      }))) exports.pieceSelected = this;
     }
   };
 
@@ -21513,11 +21541,41 @@ function () {
       }
     }
 
-    if (newSquare) this.changeSquare(newSquare, fen);
+    if (newSquare) {
+      if (newSquare.piece) {
+        exports.pieces = exports.pieces.filter(function (piece) {
+          return piece !== newSquare.piece;
+        });
+      }
+
+      this.changeSquare(newSquare, fen);
+    }
   };
 
   Piece.prototype.changeSquare = function (newSquare, fen) {
-    fen.updateFen(newSquare, this);
+    var fenBoard = fen.updateFenBoard(newSquare, this);
+    var newFen = fen.addRemains(fenBoard);
+    var oldSquare = this.square;
+    fen.fen = newFen;
+    this.drawingCoords = {
+      i: newSquare.coords.i,
+      j: newSquare.coords.j
+    };
+    this.position.file = newSquare.coords.file;
+    this.position.rank = newSquare.coords.rank;
+    this.position.fileNumber = this.getFileNumber();
+    this.square = newSquare;
+    this.square.piece = this;
+    oldSquare.piece = null;
+    this.history.push(__assign({}, this.position)); // console.log(this.square, oldSquare);
+
+    exports.pieces.forEach(function (piece) {
+      return piece.combineMoves();
+    });
+    console.log(this);
+    exports.pieceSelected = null;
+    document.getElementById("fen").innerHTML = "FEN: " + fen.fen;
+    exports.LAST_MOVES = [oldSquare, newSquare];
   };
 
   return Piece;
@@ -21586,7 +21644,7 @@ function horizontal(piece, sign) {
   var sq = [];
 
   for (var i = 1; i < 9; i++) {
-    var rank = sketch_1.grid.grid[piece.position.rank];
+    var rank = sketch_1.grid.grid[piece.drawingCoords.j];
     if (rank === undefined) break;
     var square = rank[piece.position.fileNumber + sign * i];
     if (square === undefined) break;
@@ -21618,7 +21676,7 @@ function vertical(piece, sign) {
   var sq = [];
 
   for (var i = 1; i < 9; i++) {
-    var rank = sketch_1.grid.grid[piece.position.rank + sign * i];
+    var rank = sketch_1.grid.grid[piece.drawingCoords.j + sign * i];
     if (rank === undefined) break;
     var square = rank[piece.position.fileNumber];
     if (square === undefined) break;
@@ -22268,16 +22326,16 @@ var Piece_1 = require("../classes/pieces/Piece");
 
 var Queen_1 = __importDefault(require("../classes/pieces/Queen"));
 
-var Rook_1 = __importDefault(require("../classes/pieces/Rook")); // Inspired and copied from Sebastian Lague: https://youtu.be/U4ogK0MIzqk?t=151
-
+var Rook_1 = __importDefault(require("../classes/pieces/Rook"));
 
 var FEN =
 /** @class */
 function () {
   function FEN(size) {
     this.size = size;
-    this.currentFen = // "rnbqkbnr/pppppppp/8/3n3/8/3n3/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    "b6b/8/8/8/r2Kq3/2k5/8/B6B w KQkq - 0 1";
+    this.currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
+    // "b6b/8/6q1/8/r2n4/2k5/8/B6B w KQkq - 0 1";
+
     this.fenBoard = this.getFenBoard();
     this.move = this.fen.split(" ")[1];
     this.permissions = this.fen.split(" ")[2];
@@ -22293,7 +22351,8 @@ function () {
     },
     set: function set(fen) {
       this.currentFen = fen;
-      this.fenBoard = this.getFenBoard(); // this.move = fen.split(" ")[1];
+      this.fenBoard = this.getFenBoard();
+      console.log(this.fenBoard, this.currentFen);
     },
     enumerable: false,
     configurable: true
@@ -22301,7 +22360,8 @@ function () {
 
   FEN.prototype.getFenBoard = function () {
     return this.currentFen.split(" ")[0];
-  }; // Creates the pieces at the right squares based on the FEN
+  }; // Inspired and copied from Sebastian Lague: https://youtu.be/U4ogK0MIzqk?t=151
+  // Creates the pieces at the right squares based on the FEN
 
 
   FEN.prototype.load = function (squares) {
@@ -22351,8 +22411,72 @@ function () {
     }
   };
 
-  FEN.prototype.updateFen = function (newSquare, piece) {
+  FEN.prototype.transFenBoardToZeros = function (fenBoard) {
+    var translatedFen = fenBoard;
+
+    for (var sliceIndex = 0; sliceIndex < translatedFen.length; sliceIndex++) {
+      var slice = translatedFen[sliceIndex];
+      var newSlice = "";
+
+      for (var char = 0; char < slice.length; char++) {
+        if (parseInt(slice[char])) {
+          var num = parseInt(slice[char]);
+          var stringOf0 = "";
+
+          for (var a = 0; a < num; a++) {
+            stringOf0 += "0";
+          }
+
+          newSlice += stringOf0;
+        } else {
+          newSlice += slice[char];
+        }
+      }
+
+      translatedFen[sliceIndex] = newSlice;
+    }
+
+    return translatedFen;
+  };
+
+  FEN.prototype.transFenBoard = function (newFen) {
+    var result = newFen;
+
+    for (var sliceIndex = 0; sliceIndex < newFen.length; sliceIndex++) {
+      var count = 0;
+      var slice = newFen[sliceIndex];
+      var newSlice = "";
+
+      for (var char = 0; char < slice.length; char++) {
+        if (slice[char] === "0") count++;else {
+          if (count > 0) newSlice += count;
+          newSlice += slice[char];
+          count = 0;
+        }
+      }
+
+      if (count > 0) newSlice += count;
+      result[sliceIndex] = newSlice;
+    }
+
+    return result;
+  };
+
+  FEN.prototype.updateFenBoard = function (newSquare, piece) {
     console.log(newSquare, piece);
+    var transFen = this.transFenBoardToZeros(this.fenBoard.split("/"));
+    var fenPieceRank = transFen[piece.drawingCoords.j];
+    fenPieceRank = fenPieceRank.substring(0, piece.drawingCoords.i) + "0" + fenPieceRank.substring(piece.drawingCoords.i + 1);
+    transFen[piece.drawingCoords.j] = fenPieceRank;
+    var newSquareRank = transFen[newSquare.coords.j];
+    newSquareRank = newSquareRank.substring(0, newSquare.coords.i) + piece.symbol + newSquareRank.substring(newSquare.coords.i + 1);
+    transFen[newSquare.coords.j] = newSquareRank;
+    transFen = this.transFenBoard(transFen);
+    return transFen.join("/");
+  };
+
+  FEN.prototype.addRemains = function (fenBoard) {
+    return fenBoard + " " + this.move + " " + this.permissions + " " + this.enPassant + " " + this.halfMoveClock + " " + this.fullMove;
   };
 
   return FEN;
@@ -22435,19 +22559,25 @@ var sketch = function sketch(p5) {
 
   p5.draw = function () {
     exports.grid.show();
+    Piece_1.LAST_MOVES.forEach(function (move) {
+      return move.highlight = true;
+    });
     Grid_1.SQUARES.forEach(function (square) {
       var _a;
 
       (_a = square.piece) === null || _a === void 0 ? void 0 : _a.show();
       square.showCheck();
+      if (!Piece_1.LAST_MOVES.find(function (move) {
+        return move === square;
+      })) square.highlight = false;
     });
   };
 
   p5.mousePressed = function () {
-    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
     Piece_1.pieces.forEach(function (piece) {
       piece.clickedOn(p5.mouseX, p5.mouseY);
     });
+    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
   };
 };
 
@@ -22480,7 +22610,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "35381" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36997" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

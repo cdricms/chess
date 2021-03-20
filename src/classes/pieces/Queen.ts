@@ -8,7 +8,7 @@ export default class Queen extends Piece {
     readonly color: "black" | "white",
     readonly position: { file: file; rank: number },
     readonly size: number,
-    readonly square: Square,
+    public square: Square,
     readonly symbol: string
   ) {
     super("queen", square, symbol, color, position, size);

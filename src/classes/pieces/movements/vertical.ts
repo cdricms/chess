@@ -4,7 +4,7 @@ import Piece from "../Piece";
 export default function vertical(piece: Piece, sign: number) {
   const sq = [];
   for (let i = 1; i < 9; i++) {
-    const rank = grid.grid[piece.position!.rank! + sign * i];
+    const rank = grid.grid[piece.drawingCoords.j + sign * i];
     if (rank === undefined) break;
     const square = rank[piece.position!.fileNumber!];
     if (square === undefined) break;
