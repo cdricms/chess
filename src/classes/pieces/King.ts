@@ -45,7 +45,7 @@ export default class King extends Piece {
 
   public combineMoves() {
     const moves = this.moves();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   }
 }

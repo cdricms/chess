@@ -21430,7 +21430,7 @@ function () {
     this.size = size;
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
-    this.availablesMoves = [];
+    this.availableMoves = [];
     this.position.fileNumber = this.getFileNumber();
     this.history = [__assign({}, this.position)];
   }
@@ -21453,10 +21453,10 @@ function () {
       sketch_2.p5.rect(this.square.coords.i * this.square.size, this.square.coords.j * this.square.size, this.square.size, this.square.size);
       sketch_2.p5.pop();
 
-      if (this.availablesMoves.length > 0) {
+      if (this.availableMoves.length > 0) {
         sketch_2.p5.push();
         sketch_2.p5.noStroke();
-        this.availablesMoves.forEach(function (square) {
+        this.availableMoves.forEach(function (square) {
           sketch_2.p5.fill(255, 255, 0, 150);
 
           if (square.piece && square.piece.color !== _this.color) {
@@ -21524,17 +21524,18 @@ function () {
     var hb = this.hitbox(mousex, mousey, this.square);
 
     if (hb) {
-      if (!(exports.pieceSelected && exports.pieceSelected.availablesMoves.find(function (square) {
+      if (!(exports.pieceSelected && exports.pieceSelected.availableMoves.find(function (square) {
         return square === _this.square;
       }))) exports.pieceSelected = this;
+      console.log(this);
     }
   };
 
   Piece.prototype.clickOnSquare = function (mousex, mousey, fen) {
     var newSquare = null;
 
-    if (this.availablesMoves.length > 0) {
-      for (var _i = 0, _a = this.availablesMoves; _i < _a.length; _i++) {
+    if (this.availableMoves.length > 0) {
+      for (var _i = 0, _a = this.availableMoves; _i < _a.length; _i++) {
         var move = _a[_i];
         var hb = this.hitbox(mousex, mousey, move);
         if (hb) newSquare = move;
@@ -21571,7 +21572,12 @@ function () {
     this.history.push(__assign({}, this.position)); // console.log(this.square, oldSquare);
 
     exports.pieces.forEach(function (piece) {
-      return piece.combineMoves();
+      piece.combineMoves();
+
+      if (piece.type === "pawn") {
+        piece.canEatOnEnPassant = [];
+        piece.enPassant();
+      }
     });
     console.log(this);
     exports.pieceSelected = null;
@@ -21836,7 +21842,7 @@ function (_super) {
 
     var moves = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], topLeft), topRight), bottomLeft), bottomRight);
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -21931,7 +21937,7 @@ function (_super) {
 
   King.prototype.combineMoves = function () {
     var moves = this.moves();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -21997,7 +22003,7 @@ function (_super) {
     _this.size = size;
     _this.square = square;
     _this.symbol = symbol;
-    _this.availablesMoves = _this.move();
+    _this.availableMoves = _this.move();
     return _this;
   }
 
@@ -22014,7 +22020,7 @@ function (_super) {
 
   Knight.prototype.combineMoves = function () {
     var moves = this.move();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -22053,6 +22059,14 @@ var __extends = this && this.__extends || function () {
   };
 }();
 
+var __spreadArray = this && this.__spreadArray || function (to, from) {
+  for (var i = 0, il = from.length, j = to.length; i < il; i++, j++) {
+    to[j] = from[i];
+  }
+
+  return to;
+};
+
 var __importDefault = this && this.__importDefault || function (mod) {
   return mod && mod.__esModule ? mod : {
     "default": mod
@@ -22080,6 +22094,7 @@ function (_super) {
     _this.size = size;
     _this.square = square;
     _this.symbol = symbol;
+    _this.canEatOnEnPassant = [];
     return _this;
   }
 
@@ -22089,7 +22104,7 @@ function (_super) {
     var forwardSquare = Grid_1.SQUARES[this.square.index + 8 * order];
 
     if (forwardSquare && forwardSquare.piece === null) {
-      console.log(this, forwardSquare.piece);
+      // console.log(this, forwardSquare.piece);
       moves.push(forwardSquare);
     }
 
@@ -22107,9 +22122,49 @@ function (_super) {
     return moves;
   };
 
+  Pawn.prototype.didIJustMoveTwoSquares = function () {
+    if (this.history.length === 2) {
+      var firstSquare = this.history[0];
+      var secondSquare = this.history[1];
+      console.log(this, secondSquare.rank - firstSquare.rank);
+      return Math.abs(secondSquare.rank - firstSquare.rank) === 2;
+    }
+
+    return false;
+  };
+
+  Pawn.prototype.enPassant = function () {
+    var _this = this;
+
+    if (this.didIJustMoveTwoSquares()) {
+      var leftSquare = Grid_1.SQUARES[this.square.index - 1];
+      var rightSquare = Grid_1.SQUARES[this.square.index + 1];
+      var squares = [leftSquare, rightSquare];
+      squares.forEach(function (square) {
+        if (square.piece && square.piece.color !== _this.color && square.piece.type === "pawn") {
+          var order = _this.color === "white" ? 1 : -1;
+          var eatOnSquare = Grid_1.SQUARES[_this.square.index + 8 * order];
+
+          if (!eatOnSquare.piece) {
+            var pawn_1 = square.piece;
+            console.log("hello", pawn_1);
+            pawn_1.canEatOnEnPassant = __spreadArray(__spreadArray([], pawn_1.canEatOnEnPassant), [{
+              eatOnSquare: eatOnSquare,
+              pieceToEat: _this
+            }]);
+            pawn_1.canEatOnEnPassant.forEach(function (item) {
+              pawn_1.availableMoves.push(item.eatOnSquare);
+            });
+            console.log("yo", pawn_1.availableMoves);
+          }
+        }
+      });
+    }
+  };
+
   Pawn.prototype.combineMoves = function () {
     var moves = this.frontMove();
-    this.availablesMoves = moves;
+    this.availableMoves = __spreadArray([], moves);
     return moves;
   };
 
@@ -22215,7 +22270,7 @@ function (_super) {
 
     var moves = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], topLeft), topRight), bottomLeft), bottomRight), vAndh);
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -22292,7 +22347,7 @@ function (_super) {
 
   Rook.prototype.combineMoves = function () {
     var moves = this.verticalAndHorizontal();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -22498,7 +22553,7 @@ var __importDefault = this && this.__importDefault || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.p5 = exports.grid = exports.whitePieces = exports.blackPieces = void 0;
+exports.p5 = exports.fen = exports.grid = exports.whitePieces = exports.blackPieces = void 0;
 
 var p5_1 = __importDefault(require("p5"));
 
@@ -22527,7 +22582,6 @@ exports.whitePieces = {
 
 var sketch = function sketch(p5) {
   var SIZE = 900;
-  var fen;
 
   p5.preload = function () {
     var pieces = ["bishop", "king", "knight", "pawn", "queen", "rook"];
@@ -22558,10 +22612,10 @@ var sketch = function sketch(p5) {
     p5.background(255, 255, 255);
     exports.grid = new Grid_2.default(SIZE);
     console.log(exports.grid);
-    fen = new fen_1.default(SIZE / 8);
-    fen.load(Grid_1.SQUARES);
+    exports.fen = new fen_1.default(SIZE / 8);
+    exports.fen.load(Grid_1.SQUARES);
     Piece_1.pieces.forEach(function (piece) {
-      return piece.combineMoves();
+      piece.combineMoves();
     });
     console.log(Grid_1.SQUARES);
   };
@@ -22586,7 +22640,7 @@ var sketch = function sketch(p5) {
     Piece_1.pieces.forEach(function (piece) {
       piece.clickedOn(p5.mouseX, p5.mouseY);
     });
-    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
+    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, exports.fen);
   };
 };
 
@@ -22619,7 +22673,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45793" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44171" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

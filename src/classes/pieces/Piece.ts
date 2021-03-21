@@ -6,6 +6,7 @@ import { blackPieces, whitePieces } from "../../sketch";
 import { p5 as pF } from "../../sketch";
 import Square from "../Square";
 import FEN from "../../utils/fen";
+import Pawn from "./Pawn";
 
 export let pieceSelected: null | Piece = null;
 export let pieces: Piece[] = [];
@@ -15,7 +16,7 @@ export default class Piece {
   drawingCoords: { i: number; j: number };
   image: p5.Image;
   history: { file: file; rank: number }[];
-  availablesMoves: Square[];
+  availableMoves: Square[];
 
   constructor(
     readonly type: pieceType,
@@ -27,7 +28,7 @@ export default class Piece {
   ) {
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
-    this.availablesMoves = [];
+    this.availableMoves = [];
     this.position!.fileNumber = this.getFileNumber();
     this.history = [{ ...this.position! }];
   }
@@ -49,10 +50,10 @@ export default class Piece {
       );
       pF.pop();
 
-      if (this.availablesMoves.length > 0) {
+      if (this.availableMoves.length > 0) {
         pF.push();
         pF.noStroke();
-        this.availablesMoves.forEach((square) => {
+        this.availableMoves.forEach((square) => {
           pF.fill(255, 255, 0, 150);
           if (square.piece && square.piece.color !== this.color) {
             pF.fill(255, 0, 0, 150);
@@ -132,18 +133,20 @@ export default class Piece {
       if (
         !(
           pieceSelected &&
-          pieceSelected.availablesMoves.find((square) => square === this.square)
+          pieceSelected.availableMoves.find((square) => square === this.square)
         )
       )
         pieceSelected = this;
+
+      console.log(this);
     }
   }
 
   public clickOnSquare(mousex: number, mousey: number, fen: FEN) {
     let newSquare: Square | null = null;
 
-    if (this.availablesMoves.length > 0) {
-      for (let move of this.availablesMoves) {
+    if (this.availableMoves.length > 0) {
+      for (let move of this.availableMoves) {
         const hb = this.hitbox(mousex, mousey, move);
 
         if (hb) newSquare = move;
@@ -176,7 +179,13 @@ export default class Piece {
     oldSquare.piece = null;
     this.history.push({ ...this.position! });
     // console.log(this.square, oldSquare);
-    pieces.forEach((piece) => piece.combineMoves());
+    pieces.forEach((piece) => {
+      piece.combineMoves();
+      if (piece.type === "pawn") {
+        (piece as Pawn).canEatOnEnPassant = [];
+        (piece as Pawn).enPassant();
+      }
+    });
 
     console.log(this);
     pieceSelected = null;

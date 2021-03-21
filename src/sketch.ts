@@ -5,6 +5,7 @@ import Square from "./classes/Square";
 import { pieceType, image } from "./interfaces/pieces";
 import FEN from "./utils/fen";
 import { LAST_MOVES, pieces, pieceSelected } from "./classes/pieces/Piece";
+import Pawn from "./classes/pieces/Pawn";
 
 const debug = document.getElementById("debug");
 const debugBtn = document.getElementById("debugBtn");
@@ -29,10 +30,10 @@ export const whitePieces: {
 };
 
 export let grid: Grid;
+export let fen: FEN;
+
 const sketch = (p5: P5) => {
   const SIZE = 900;
-
-  let fen: FEN;
 
   p5.preload = () => {
     const pieces: pieceType[] = [
@@ -78,7 +79,9 @@ const sketch = (p5: P5) => {
 
     fen.load(SQUARES);
 
-    pieces.forEach((piece) => piece.combineMoves());
+    pieces.forEach((piece) => {
+      piece.combineMoves();
+    });
 
     console.log(SQUARES);
   };

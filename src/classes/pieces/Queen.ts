@@ -40,7 +40,7 @@ export default class Queen extends Piece {
       ...vAndh
     ];
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
 
     return moves;
   }
