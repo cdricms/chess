@@ -1,5 +1,5 @@
 import p5 from "p5";
-import { LETTERS, SQUARES } from "../Grid";
+import { LETTERS } from "../Grid";
 import { file } from "../../interfaces/grid";
 import { image, pieceType } from "../../interfaces/pieces";
 import { blackPieces, whitePieces } from "../../sketch";
@@ -164,6 +164,7 @@ export default class Piece {
     const oldSquare = this.square;
 
     fen.fen = newFen;
+    fen.fenHistory.push(fen.fen);
 
     this.drawingCoords = { i: newSquare.coords.i, j: newSquare.coords.j };
     this.position!.file = newSquare.coords.file;
@@ -182,5 +183,7 @@ export default class Piece {
 
     document.getElementById("fen")!.innerHTML = "FEN: " + fen.fen;
     LAST_MOVES = [oldSquare, newSquare];
+
+    console.log(fen);
   }
 }

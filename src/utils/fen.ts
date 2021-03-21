@@ -18,6 +18,8 @@ export default class FEN {
 
   private fenBoard = this.getFenBoard();
 
+  public fenHistory: string[] = [this.currentFen];
+
   readonly move = this.fen.split(" ")[1];
   readonly permissions = this.fen.split(" ")[2];
   readonly enPassant = this.fen.split(" ")[3];

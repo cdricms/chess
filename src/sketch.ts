@@ -6,6 +6,16 @@ import { pieceType, image } from "./interfaces/pieces";
 import FEN from "./utils/fen";
 import { LAST_MOVES, pieces, pieceSelected } from "./classes/pieces/Piece";
 
+const debug = document.getElementById("debug");
+const debugBtn = document.getElementById("debugBtn");
+
+debug!.style.visibility = "hidden";
+
+debugBtn!.onclick = () => {
+  debug!.style.visibility =
+    debug!.style.visibility === "hidden" ? "visible" : "hidden";
+};
+
 export const blackPieces: {
   images: image[];
 } = {
@@ -67,10 +77,6 @@ const sketch = (p5: P5) => {
     fen = new FEN(SIZE / 8);
 
     fen.load(SQUARES);
-
-    // fen.updateFen(SQUARES);
-
-    // console.log(grid);
 
     pieces.forEach((piece) => piece.combineMoves());
 

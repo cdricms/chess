@@ -35,9 +35,17 @@ export default class Pawn extends Piece {
     const enemyOne = SQUARES[this.square.index + 7 * order];
     const enemyTwo = SQUARES[this.square.index + 9 * order];
 
-    if (enemyOne.piece && enemyOne.piece.color !== this.color)
+    if (
+      enemyOne.piece &&
+      enemyOne.piece.color !== this.color &&
+      this.position.file !== "A"
+    )
       enemies.push(enemyOne);
-    if (enemyTwo.piece && enemyTwo.piece.color !== this.color)
+    if (
+      enemyTwo.piece &&
+      enemyTwo.piece.color !== this.color &&
+      this.position.file !== "H"
+    )
       enemies.push(enemyTwo);
 
     moves.push(...enemies);

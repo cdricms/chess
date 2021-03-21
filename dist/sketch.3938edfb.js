@@ -21557,6 +21557,7 @@ function () {
     var newFen = fen.addRemains(fenBoard);
     var oldSquare = this.square;
     fen.fen = newFen;
+    fen.fenHistory.push(fen.fen);
     this.drawingCoords = {
       i: newSquare.coords.i,
       j: newSquare.coords.j
@@ -21576,6 +21577,7 @@ function () {
     exports.pieceSelected = null;
     document.getElementById("fen").innerHTML = "FEN: " + fen.fen;
     exports.LAST_MOVES = [oldSquare, newSquare];
+    console.log(fen);
   };
 
   return Piece;
@@ -22099,8 +22101,8 @@ function (_super) {
     var enemies = [];
     var enemyOne = Grid_1.SQUARES[this.square.index + 7 * order];
     var enemyTwo = Grid_1.SQUARES[this.square.index + 9 * order];
-    if (enemyOne.piece && enemyOne.piece.color !== this.color) enemies.push(enemyOne);
-    if (enemyTwo.piece && enemyTwo.piece.color !== this.color) enemies.push(enemyTwo);
+    if (enemyOne.piece && enemyOne.piece.color !== this.color && this.position.file !== "A") enemies.push(enemyOne);
+    if (enemyTwo.piece && enemyTwo.piece.color !== this.color && this.position.file !== "H") enemies.push(enemyTwo);
     moves.push.apply(moves, enemies);
     return moves;
   };
@@ -22337,6 +22339,7 @@ function () {
     // "b6b/8/6q1/8/r2n4/2k5/8/B6B w KQkq - 0 1";
 
     this.fenBoard = this.getFenBoard();
+    this.fenHistory = [this.currentFen];
     this.move = this.fen.split(" ")[1];
     this.permissions = this.fen.split(" ")[2];
     this.enPassant = this.fen.split(" ")[3];
@@ -22507,6 +22510,14 @@ var fen_1 = __importDefault(require("./utils/fen"));
 
 var Piece_1 = require("./classes/pieces/Piece");
 
+var debug = document.getElementById("debug");
+var debugBtn = document.getElementById("debugBtn");
+debug.style.visibility = "hidden";
+
+debugBtn.onclick = function () {
+  debug.style.visibility = debug.style.visibility === "hidden" ? "visible" : "hidden";
+};
+
 exports.blackPieces = {
   images: []
 };
@@ -22548,9 +22559,7 @@ var sketch = function sketch(p5) {
     exports.grid = new Grid_2.default(SIZE);
     console.log(exports.grid);
     fen = new fen_1.default(SIZE / 8);
-    fen.load(Grid_1.SQUARES); // fen.updateFen(SQUARES);
-    // console.log(grid);
-
+    fen.load(Grid_1.SQUARES);
     Piece_1.pieces.forEach(function (piece) {
       return piece.combineMoves();
     });
@@ -22610,7 +22619,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36997" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45793" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
