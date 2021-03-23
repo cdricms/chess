@@ -2,7 +2,7 @@ import Piece, { LAST_MOVES } from "./Piece";
 import { file } from "../../interfaces/grid";
 import Square from "../Square";
 import { SQUARES } from "../Grid";
-import { fen } from "../../sketch";
+import { fen, grid } from "../../sketch";
 
 export default class Pawn extends Piece {
   canEatOnEnPassant: { eatOnSquare: Square; pieceToEat: Pawn }[];
@@ -36,20 +36,14 @@ export default class Pawn extends Piece {
 
     const enemies: Square[] = [];
 
-    const enemyOne = SQUARES[this.square.index + 7 * order];
-    const enemyTwo = SQUARES[this.square.index + 9 * order];
+    const enemyOne =
+      grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1];
+    const enemyTwo =
+      grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1];
 
-    if (
-      enemyOne.piece &&
-      enemyOne.piece.color !== this.color &&
-      this.position.file !== "A"
-    )
+    if (enemyOne && enemyOne.piece && enemyOne.piece.color !== this.color)
       enemies.push(enemyOne);
-    if (
-      enemyTwo.piece &&
-      enemyTwo.piece.color !== this.color &&
-      this.position.file !== "H"
-    )
+    if (enemyTwo && enemyTwo.piece && enemyTwo.piece.color !== this.color)
       enemies.push(enemyTwo);
 
     moves.push(...enemies);
@@ -57,52 +51,54 @@ export default class Pawn extends Piece {
     return moves;
   }
 
-  private didIJustMoveTwoSquares() {
-    if (this.history.length === 2) {
-      const firstSquare = this.history[0];
-      const secondSquare = this.history[1];
-      console.log(this, secondSquare.rank - firstSquare.rank);
-      return Math.abs(secondSquare.rank - firstSquare.rank) === 2;
+  public didIMoveTwoSquares() {
+    const prev = this.history[this.history.length - 2].rank;
+    const last = this.history[this.history.length - 1].rank;
+
+    if (prev && last) {
+      return Math.abs(prev - last) === 2;
     }
 
     return false;
   }
 
-  public enPassant() {
-    if (this.didIJustMoveTwoSquares()) {
-      const leftSquare = SQUARES[this.square.index - 1];
-      const rightSquare = SQUARES[this.square.index + 1];
+  private enPassant() {
+    const moves: Square[] = [];
+    const leftSquare =
+      this.position.file === "A" ? null : SQUARES[this.square.index - 1];
+    const rightSquare =
+      this.position.file === "H" ? null : SQUARES[this.square.index + 1];
 
-      const squares = [leftSquare, rightSquare];
+    const squares = [leftSquare, rightSquare];
 
-      squares.forEach((square) => {
-        if (
-          square.piece &&
-          square.piece.color !== this.color &&
-          square.piece.type === "pawn"
-        ) {
-          const order = this.color === "white" ? 1 : -1;
-          const eatOnSquare = SQUARES[this.square.index + 8 * order];
-          if (!eatOnSquare.piece) {
-            const pawn = square.piece as Pawn;
-            console.log("hello", pawn);
-            pawn.canEatOnEnPassant = [
-              ...pawn.canEatOnEnPassant,
-              { eatOnSquare, pieceToEat: this }
-            ];
-            pawn.canEatOnEnPassant.forEach((item) => {
-              pawn.availableMoves.push(item.eatOnSquare);
-            });
-            console.log("yo", pawn.availableMoves);
-          }
+    squares.forEach((square) => {
+      if (
+        square &&
+        square.piece &&
+        square.piece.color !== this.color &&
+        square.piece.type === "pawn" &&
+        (square.piece as Pawn).didIMoveTwoSquares()
+      ) {
+        const order = this.color === "white" ? -1 : 1;
+        const eatOnSquare = SQUARES[square.index + 8 * order];
+
+        if (eatOnSquare && !eatOnSquare.piece) {
+          this.canEatOnEnPassant.push({
+            eatOnSquare,
+            pieceToEat: square.piece as Pawn
+          });
+          moves.push(eatOnSquare);
         }
-      });
-    }
+      }
+    });
+
+    return moves;
   }
 
   public combineMoves() {
     const moves = this.frontMove();
-    this.availableMoves = [...moves];
+    const enPassant = this.enPassant();
+    this.availableMoves = [...moves, ...enPassant];
     return moves;
   }
 }

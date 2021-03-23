@@ -21573,11 +21573,6 @@ function () {
 
     exports.pieces.forEach(function (piece) {
       piece.combineMoves();
-
-      if (piece.type === "pawn") {
-        piece.canEatOnEnPassant = [];
-        piece.enPassant();
-      }
     });
     console.log(this);
     exports.pieceSelected = null;
@@ -22081,6 +22076,8 @@ var Piece_1 = __importDefault(require("./Piece"));
 
 var Grid_1 = require("../Grid");
 
+var sketch_1 = require("../../sketch");
+
 var Pawn =
 /** @class */
 function (_super) {
@@ -22114,20 +22111,20 @@ function (_super) {
     }
 
     var enemies = [];
-    var enemyOne = Grid_1.SQUARES[this.square.index + 7 * order];
-    var enemyTwo = Grid_1.SQUARES[this.square.index + 9 * order];
-    if (enemyOne.piece && enemyOne.piece.color !== this.color && this.position.file !== "A") enemies.push(enemyOne);
-    if (enemyTwo.piece && enemyTwo.piece.color !== this.color && this.position.file !== "H") enemies.push(enemyTwo);
+    var enemyOne = sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1];
+    var enemyTwo = sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1];
+    if (enemyOne && enemyOne.piece && enemyOne.piece.color !== this.color) enemies.push(enemyOne);
+    if (enemyTwo && enemyTwo.piece && enemyTwo.piece.color !== this.color) enemies.push(enemyTwo);
     moves.push.apply(moves, enemies);
     return moves;
   };
 
-  Pawn.prototype.didIJustMoveTwoSquares = function () {
-    if (this.history.length === 2) {
-      var firstSquare = this.history[0];
-      var secondSquare = this.history[1];
-      console.log(this, secondSquare.rank - firstSquare.rank);
-      return Math.abs(secondSquare.rank - firstSquare.rank) === 2;
+  Pawn.prototype.didIMoveTwoSquares = function () {
+    var prev = this.history[this.history.length - 2].rank;
+    var last = this.history[this.history.length - 1].rank;
+
+    if (prev && last) {
+      return Math.abs(prev - last) === 2;
     }
 
     return false;
@@ -22136,35 +22133,32 @@ function (_super) {
   Pawn.prototype.enPassant = function () {
     var _this = this;
 
-    if (this.didIJustMoveTwoSquares()) {
-      var leftSquare = Grid_1.SQUARES[this.square.index - 1];
-      var rightSquare = Grid_1.SQUARES[this.square.index + 1];
-      var squares = [leftSquare, rightSquare];
-      squares.forEach(function (square) {
-        if (square.piece && square.piece.color !== _this.color && square.piece.type === "pawn") {
-          var order = _this.color === "white" ? 1 : -1;
-          var eatOnSquare = Grid_1.SQUARES[_this.square.index + 8 * order];
+    var moves = [];
+    var leftSquare = this.position.file === "A" ? null : Grid_1.SQUARES[this.square.index - 1];
+    var rightSquare = this.position.file === "H" ? null : Grid_1.SQUARES[this.square.index + 1];
+    var squares = [leftSquare, rightSquare];
+    squares.forEach(function (square) {
+      if (square && square.piece && square.piece.color !== _this.color && square.piece.type === "pawn" && square.piece.didIMoveTwoSquares()) {
+        var order = _this.color === "white" ? -1 : 1;
+        var eatOnSquare = Grid_1.SQUARES[square.index + 8 * order];
 
-          if (!eatOnSquare.piece) {
-            var pawn_1 = square.piece;
-            console.log("hello", pawn_1);
-            pawn_1.canEatOnEnPassant = __spreadArray(__spreadArray([], pawn_1.canEatOnEnPassant), [{
-              eatOnSquare: eatOnSquare,
-              pieceToEat: _this
-            }]);
-            pawn_1.canEatOnEnPassant.forEach(function (item) {
-              pawn_1.availableMoves.push(item.eatOnSquare);
-            });
-            console.log("yo", pawn_1.availableMoves);
-          }
+        if (eatOnSquare && !eatOnSquare.piece) {
+          _this.canEatOnEnPassant.push({
+            eatOnSquare: eatOnSquare,
+            pieceToEat: square.piece
+          });
+
+          moves.push(eatOnSquare);
         }
-      });
-    }
+      }
+    });
+    return moves;
   };
 
   Pawn.prototype.combineMoves = function () {
     var moves = this.frontMove();
-    this.availableMoves = __spreadArray([], moves);
+    var enPassant = this.enPassant();
+    this.availableMoves = __spreadArray(__spreadArray([], moves), enPassant);
     return moves;
   };
 
@@ -22172,7 +22166,7 @@ function (_super) {
 }(Piece_1.default);
 
 exports.default = Pawn;
-},{"./Piece":"classes/pieces/Piece.ts","../Grid":"classes/Grid.ts"}],"classes/pieces/Queen.ts":[function(require,module,exports) {
+},{"./Piece":"classes/pieces/Piece.ts","../Grid":"classes/Grid.ts","../../sketch":"sketch.ts"}],"classes/pieces/Queen.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -22673,7 +22667,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44171" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44671" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

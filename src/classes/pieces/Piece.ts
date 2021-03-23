@@ -181,10 +181,6 @@ export default class Piece {
     // console.log(this.square, oldSquare);
     pieces.forEach((piece) => {
       piece.combineMoves();
-      if (piece.type === "pawn") {
-        (piece as Pawn).canEatOnEnPassant = [];
-        (piece as Pawn).enPassant();
-      }
     });
 
     console.log(this);
