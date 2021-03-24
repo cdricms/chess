@@ -21230,10 +21230,18 @@ var global = arguments[3];
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.SHOW_CHECK = void 0;
 
 var Grid_1 = require("./Grid");
 
 var sketch_1 = require("../sketch");
+
+exports.SHOW_CHECK = false;
+var btnShowCheck = document.getElementById("check");
+
+btnShowCheck.onclick = function () {
+  return exports.SHOW_CHECK = !exports.SHOW_CHECK;
+};
 
 var Square =
 /** @class */
@@ -21249,7 +21257,7 @@ function () {
   }
 
   Square.prototype.showCheck = function () {
-    if (this.piece) {
+    if (exports.SHOW_CHECK && this.piece) {
       if (this.piece.position.file === this.coords.file && this.piece.position.rank === this.coords.rank) {
         sketch_1.p5.push();
         sketch_1.p5.fill(0, 255, 0);
@@ -21332,7 +21340,12 @@ var Square_1 = __importDefault(require("./Square"));
 exports.LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 var GRID_COLOR = [0, 1, 0, 1, 0, 1, 0, 1];
 exports.SQUARES = [];
-exports.SHOW_COORDS = true;
+exports.SHOW_COORDS = false;
+var btnShowCoords = document.getElementById("coords");
+
+btnShowCoords.onclick = function () {
+  return exports.SHOW_COORDS = !exports.SHOW_COORDS;
+};
 
 var Grid =
 /** @class */
@@ -22754,7 +22767,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51080" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54220" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

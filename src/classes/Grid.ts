@@ -1,6 +1,4 @@
-import P5 from "p5";
 import { file } from "../interfaces/grid";
-import { p5 } from "../sketch";
 import Square from "./Square";
 
 export const LETTERS: file[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -8,7 +6,11 @@ const GRID_COLOR = [0, 1, 0, 1, 0, 1, 0, 1];
 
 export const SQUARES: Square[] = [];
 
-export let SHOW_COORDS = true;
+export let SHOW_COORDS = false;
+
+const btnShowCoords = document.getElementById("coords")!;
+
+btnShowCoords.onclick = () => (SHOW_COORDS = !SHOW_COORDS);
 
 export default class Grid {
   grid: Square[][];

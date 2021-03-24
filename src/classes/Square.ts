@@ -1,9 +1,13 @@
 import GridCoordinates from "../interfaces/grid";
-import P5 from "p5";
 import { SHOW_COORDS } from "./Grid";
 import { p5 } from "../sketch";
 import Piece from "./pieces/Piece";
 
+export let SHOW_CHECK = false;
+
+const btnShowCheck = document.getElementById("check")!;
+
+btnShowCheck.onclick = () => (SHOW_CHECK = !SHOW_CHECK);
 export default class Square {
   piece: Piece | null;
   highlight: boolean;
@@ -20,7 +24,7 @@ export default class Square {
   }
 
   public showCheck() {
-    if (this.piece) {
+    if (SHOW_CHECK && this.piece) {
       if (
         this.piece.position!.file === this.coords.file &&
         this.piece.position!.rank === this.coords.rank
