@@ -179,6 +179,7 @@ export default class Piece {
     oldSquare.piece = null;
     this.history.push({ ...this.position! });
     // console.log(this.square, oldSquare);
+    LAST_MOVES = [oldSquare, newSquare];
     pieces.forEach((piece) => {
       piece.combineMoves();
     });
@@ -187,7 +188,6 @@ export default class Piece {
     pieceSelected = null;
 
     document.getElementById("fen")!.innerHTML = "FEN: " + fen.fen;
-    LAST_MOVES = [oldSquare, newSquare];
 
     console.log(fen);
   }

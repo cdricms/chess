@@ -21571,13 +21571,13 @@ function () {
     oldSquare.piece = null;
     this.history.push(__assign({}, this.position)); // console.log(this.square, oldSquare);
 
+    exports.LAST_MOVES = [oldSquare, newSquare];
     exports.pieces.forEach(function (piece) {
       piece.combineMoves();
     });
     console.log(this);
     exports.pieceSelected = null;
     document.getElementById("fen").innerHTML = "FEN: " + fen.fen;
-    exports.LAST_MOVES = [oldSquare, newSquare];
     console.log(fen);
   };
 
@@ -22054,6 +22054,40 @@ var __extends = this && this.__extends || function () {
   };
 }();
 
+var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  Object.defineProperty(o, k2, {
+    enumerable: true,
+    get: function get() {
+      return m[k];
+    }
+  });
+} : function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  o[k2] = m[k];
+});
+
+var __setModuleDefault = this && this.__setModuleDefault || (Object.create ? function (o, v) {
+  Object.defineProperty(o, "default", {
+    enumerable: true,
+    value: v
+  });
+} : function (o, v) {
+  o["default"] = v;
+});
+
+var __importStar = this && this.__importStar || function (mod) {
+  if (mod && mod.__esModule) return mod;
+  var result = {};
+  if (mod != null) for (var k in mod) {
+    if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+  }
+
+  __setModuleDefault(result, mod);
+
+  return result;
+};
+
 var __spreadArray = this && this.__spreadArray || function (to, from) {
   for (var i = 0, il = from.length, j = to.length; i < il; i++, j++) {
     to[j] = from[i];
@@ -22062,17 +22096,11 @@ var __spreadArray = this && this.__spreadArray || function (to, from) {
   return to;
 };
 
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var Piece_1 = __importDefault(require("./Piece"));
+var Piece_1 = __importStar(require("./Piece"));
 
 var Grid_1 = require("../Grid");
 
@@ -22138,9 +22166,11 @@ function (_super) {
     var rightSquare = this.position.file === "H" ? null : Grid_1.SQUARES[this.square.index + 1];
     var squares = [leftSquare, rightSquare];
     squares.forEach(function (square) {
-      if (square && square.piece && square.piece.color !== _this.color && square.piece.type === "pawn" && square.piece.didIMoveTwoSquares()) {
+      if (square && square.piece && square.piece.color !== _this.color && square.piece.type === "pawn" && square.piece.didIMoveTwoSquares() && Piece_1.LAST_MOVES[1].piece === square.piece) {
         var order = _this.color === "white" ? -1 : 1;
         var eatOnSquare = Grid_1.SQUARES[square.index + 8 * order];
+        console.log("Last move", Piece_1.LAST_MOVES[1]);
+        console.log("Square:", square);
 
         if (eatOnSquare && !eatOnSquare.piece) {
           _this.canEatOnEnPassant.push({
@@ -22667,7 +22697,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44671" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "33127" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -77,10 +77,14 @@ export default class Pawn extends Piece {
         square.piece &&
         square.piece.color !== this.color &&
         square.piece.type === "pawn" &&
-        (square.piece as Pawn).didIMoveTwoSquares()
+        (square.piece as Pawn).didIMoveTwoSquares() &&
+        LAST_MOVES[1].piece === square.piece
       ) {
         const order = this.color === "white" ? -1 : 1;
         const eatOnSquare = SQUARES[square.index + 8 * order];
+
+        console.log("Last move", LAST_MOVES[1]);
+        console.log("Square:", square);
 
         if (eatOnSquare && !eatOnSquare.piece) {
           this.canEatOnEnPassant.push({
