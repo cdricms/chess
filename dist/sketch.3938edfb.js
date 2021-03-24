@@ -21430,7 +21430,7 @@ function () {
     this.size = size;
     this.drawingCoords = this.getDrawingCoords();
     this.image = this.getImage();
-    this.availablesMoves = [];
+    this.availableMoves = [];
     this.position.fileNumber = this.getFileNumber();
     this.history = [__assign({}, this.position)];
   }
@@ -21453,10 +21453,10 @@ function () {
       sketch_2.p5.rect(this.square.coords.i * this.square.size, this.square.coords.j * this.square.size, this.square.size, this.square.size);
       sketch_2.p5.pop();
 
-      if (this.availablesMoves.length > 0) {
+      if (this.availableMoves.length > 0) {
         sketch_2.p5.push();
         sketch_2.p5.noStroke();
-        this.availablesMoves.forEach(function (square) {
+        this.availableMoves.forEach(function (square) {
           sketch_2.p5.fill(255, 255, 0, 150);
 
           if (square.piece && square.piece.color !== _this.color) {
@@ -21524,40 +21524,71 @@ function () {
     var hb = this.hitbox(mousex, mousey, this.square);
 
     if (hb) {
-      if (!(exports.pieceSelected && exports.pieceSelected.availablesMoves.find(function (square) {
+      if (!(exports.pieceSelected && exports.pieceSelected.availableMoves.find(function (square) {
         return square === _this.square;
       }))) exports.pieceSelected = this;
     }
   };
 
   Piece.prototype.clickOnSquare = function (mousex, mousey, fen) {
-    var newSquare = null;
+    var newSquare = null; // If there are moves available, assigning the move as the new square
 
-    if (this.availablesMoves.length > 0) {
-      for (var _i = 0, _a = this.availablesMoves; _i < _a.length; _i++) {
+    if (this.availableMoves.length > 0) {
+      for (var _i = 0, _a = this.availableMoves; _i < _a.length; _i++) {
         var move = _a[_i];
         var hb = this.hitbox(mousex, mousey, move);
         if (hb) newSquare = move;
       }
     }
 
+    var enPassant = null;
+
     if (newSquare) {
+      if (this.type === "pawn") {
+        var toEat_1 = this.canEatOnEnPassant.find(function (item) {
+          return item.eatOnSquare === newSquare;
+        });
+
+        if (toEat_1) {
+          exports.pieces = exports.pieces.filter(function (piece) {
+            return piece !== toEat_1.pieceToEat;
+          });
+          toEat_1.pieceToEat.square.piece = null;
+          enPassant = toEat_1;
+        }
+      }
+
       if (newSquare.piece) {
         exports.pieces = exports.pieces.filter(function (piece) {
           return piece !== newSquare.piece;
         });
       }
 
-      this.changeSquare(newSquare, fen);
+      this.changeSquare(newSquare, fen, enPassant);
     }
   };
 
-  Piece.prototype.changeSquare = function (newSquare, fen) {
-    var fenBoard = fen.updateFenBoard(newSquare, this);
-    var newFen = fen.addRemains(fenBoard);
-    var oldSquare = this.square;
-    fen.fen = newFen;
-    fen.fenHistory.push(fen.fen);
+  Piece.prototype.changeSquare = function (newSquare, fen, enPassant) {
+    // Set the old square to the actual square
+    var oldSquare = this.square; // Updating the fen board
+
+    var fenBoard = fen.updateFenBoard(newSquare, this); // Adding the remainings to the fen board, to have a complete fen
+
+    var newFen = fen.addRemains(fenBoard); // Setting the fen to the new one
+
+    fen.fen = newFen; // If enPassant move is made, update the fen
+
+    if (enPassant) {
+      var fenBoard_1 = fen.updateFenBoard(enPassant.eatOnSquare, null, {
+        square: "0",
+        i: enPassant.pieceToEat.drawingCoords.i,
+        j: enPassant.pieceToEat.drawingCoords.j
+      });
+      var newFen_1 = fen.addRemains(fenBoard_1);
+      fen.fen = newFen_1;
+    } // Updating the properties of the piece
+
+
     this.drawingCoords = {
       i: newSquare.coords.i,
       j: newSquare.coords.j
@@ -21567,17 +21598,30 @@ function () {
     this.position.fileNumber = this.getFileNumber();
     this.square = newSquare;
     this.square.piece = this;
-    oldSquare.piece = null;
-    this.history.push(__assign({}, this.position)); // console.log(this.square, oldSquare);
+    oldSquare.piece = null; //
 
+    exports.LAST_MOVES = [oldSquare, newSquare];
+    this.history.push(__assign({}, this.position));
     exports.pieces.forEach(function (piece) {
-      return piece.combineMoves();
-    });
-    console.log(this);
+      piece.combineMoves();
+    }); // Updating for the enPassant string
+
+    var enPassantString = "-"; // Getting the only pawn that has an en passant move
+
+    var rightPawn = exports.pieces.find(function (piece) {
+      return piece.type === "pawn" && piece.enPassantString !== "-";
+    }); // If found update enPassantString to the right square
+
+    if (rightPawn) {
+      enPassantString = rightPawn.enPassantString;
+    } // Updating the fen with en passant
+
+
+    var fenEnPassant = fen.addRemains(fen.fen.split(" ")[0], enPassantString);
+    fen.fen = fenEnPassant;
     exports.pieceSelected = null;
     document.getElementById("fen").innerHTML = "FEN: " + fen.fen;
-    exports.LAST_MOVES = [oldSquare, newSquare];
-    console.log(fen);
+    fen.fenHistory.push(fen.fen);
   };
 
   return Piece;
@@ -21836,7 +21880,7 @@ function (_super) {
 
     var moves = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], topLeft), topRight), bottomLeft), bottomRight);
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -21931,7 +21975,7 @@ function (_super) {
 
   King.prototype.combineMoves = function () {
     var moves = this.moves();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -21997,7 +22041,7 @@ function (_super) {
     _this.size = size;
     _this.square = square;
     _this.symbol = symbol;
-    _this.availablesMoves = _this.move();
+    _this.availableMoves = _this.move();
     return _this;
   }
 
@@ -22014,7 +22058,7 @@ function (_super) {
 
   Knight.prototype.combineMoves = function () {
     var moves = this.move();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -22053,19 +22097,57 @@ var __extends = this && this.__extends || function () {
   };
 }();
 
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
+var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  Object.defineProperty(o, k2, {
+    enumerable: true,
+    get: function get() {
+      return m[k];
+    }
+  });
+} : function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  o[k2] = m[k];
+});
+
+var __setModuleDefault = this && this.__setModuleDefault || (Object.create ? function (o, v) {
+  Object.defineProperty(o, "default", {
+    enumerable: true,
+    value: v
+  });
+} : function (o, v) {
+  o["default"] = v;
+});
+
+var __importStar = this && this.__importStar || function (mod) {
+  if (mod && mod.__esModule) return mod;
+  var result = {};
+  if (mod != null) for (var k in mod) {
+    if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+  }
+
+  __setModuleDefault(result, mod);
+
+  return result;
+};
+
+var __spreadArray = this && this.__spreadArray || function (to, from) {
+  for (var i = 0, il = from.length, j = to.length; i < il; i++, j++) {
+    to[j] = from[i];
+  }
+
+  return to;
 };
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var Piece_1 = __importDefault(require("./Piece"));
+var Piece_1 = __importStar(require("./Piece"));
 
 var Grid_1 = require("../Grid");
+
+var sketch_1 = require("../../sketch");
 
 var Pawn =
 /** @class */
@@ -22080,6 +22162,8 @@ function (_super) {
     _this.size = size;
     _this.square = square;
     _this.symbol = symbol;
+    _this.enPassantString = "-";
+    _this.canEatOnEnPassant = [];
     return _this;
   }
 
@@ -22089,7 +22173,6 @@ function (_super) {
     var forwardSquare = Grid_1.SQUARES[this.square.index + 8 * order];
 
     if (forwardSquare && forwardSquare.piece === null) {
-      console.log(this, forwardSquare.piece);
       moves.push(forwardSquare);
     }
 
@@ -22099,17 +22182,57 @@ function (_super) {
     }
 
     var enemies = [];
-    var enemyOne = Grid_1.SQUARES[this.square.index + 7 * order];
-    var enemyTwo = Grid_1.SQUARES[this.square.index + 9 * order];
-    if (enemyOne.piece && enemyOne.piece.color !== this.color && this.position.file !== "A") enemies.push(enemyOne);
-    if (enemyTwo.piece && enemyTwo.piece.color !== this.color && this.position.file !== "H") enemies.push(enemyTwo);
+    var enemyOne = sketch_1.grid.grid[this.drawingCoords.j + 1 * order] ? sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1] : null;
+    var enemyTwo = sketch_1.grid.grid[this.drawingCoords.j + 1 * order] ? sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1] : null;
+    if (enemyOne && enemyOne.piece && enemyOne.piece.color !== this.color && enemyOne.piece.type !== "king") enemies.push(enemyOne);
+    if (enemyTwo && enemyTwo.piece && enemyTwo.piece.color !== this.color && enemyTwo.piece.type !== "king") enemies.push(enemyTwo);
     moves.push.apply(moves, enemies);
+    return moves;
+  };
+
+  Pawn.prototype.didIMoveTwoSquares = function () {
+    var prev = this.history[this.history.length - 2];
+    var last = this.history[this.history.length - 1];
+
+    if (prev && last) {
+      return Math.abs(prev.rank - last.rank) === 2;
+    }
+
+    return false;
+  };
+
+  Pawn.prototype.enPassant = function () {
+    var _this = this;
+
+    var moves = [];
+    var leftSquare = this.position.file === "A" ? null : Grid_1.SQUARES[this.square.index - 1];
+    var rightSquare = this.position.file === "H" ? null : Grid_1.SQUARES[this.square.index + 1];
+    var squares = [leftSquare, rightSquare];
+    this.canEatOnEnPassant = [];
+    this.enPassantString = "-";
+    squares.forEach(function (square) {
+      if (square && square.piece && square.piece.color !== _this.color && square.piece.type === "pawn" && square.piece.didIMoveTwoSquares() && Piece_1.LAST_MOVES[1].piece === square.piece) {
+        var order = _this.color === "white" ? -1 : 1;
+        var eatOnSquare = Grid_1.SQUARES[square.index + 8 * order];
+
+        if (eatOnSquare && !eatOnSquare.piece) {
+          _this.canEatOnEnPassant.push({
+            eatOnSquare: eatOnSquare,
+            pieceToEat: square.piece
+          });
+
+          _this.enPassantString = "" + eatOnSquare.coords.file.toLowerCase() + eatOnSquare.coords.rank;
+          moves.push(eatOnSquare);
+        }
+      }
+    });
     return moves;
   };
 
   Pawn.prototype.combineMoves = function () {
     var moves = this.frontMove();
-    this.availablesMoves = moves;
+    var enPassant = this.enPassant();
+    this.availableMoves = __spreadArray(__spreadArray([], moves), enPassant);
     return moves;
   };
 
@@ -22117,7 +22240,7 @@ function (_super) {
 }(Piece_1.default);
 
 exports.default = Pawn;
-},{"./Piece":"classes/pieces/Piece.ts","../Grid":"classes/Grid.ts"}],"classes/pieces/Queen.ts":[function(require,module,exports) {
+},{"./Piece":"classes/pieces/Piece.ts","../Grid":"classes/Grid.ts","../../sketch":"sketch.ts"}],"classes/pieces/Queen.ts":[function(require,module,exports) {
 "use strict";
 
 var __extends = this && this.__extends || function () {
@@ -22215,7 +22338,7 @@ function (_super) {
 
     var moves = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], topLeft), topRight), bottomLeft), bottomRight), vAndh);
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -22292,7 +22415,7 @@ function (_super) {
 
   Rook.prototype.combineMoves = function () {
     var moves = this.verticalAndHorizontal();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   };
 
@@ -22335,7 +22458,8 @@ var FEN =
 function () {
   function FEN(size) {
     this.size = size;
-    this.currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
+    this.currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // "rnbqkbnr/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
     // "b6b/8/6q1/8/r2n4/2k5/8/B6B w KQkq - 0 1";
 
     this.fenBoard = this.getFenBoard();
@@ -22355,7 +22479,6 @@ function () {
     set: function set(fen) {
       this.currentFen = fen;
       this.fenBoard = this.getFenBoard();
-      console.log(this.fenBoard, this.currentFen);
     },
     enumerable: false,
     configurable: true
@@ -22465,21 +22588,36 @@ function () {
     return result;
   };
 
-  FEN.prototype.updateFenBoard = function (newSquare, piece) {
-    console.log(newSquare, piece);
+  FEN.prototype.updateFenBoard = function (newSquare, piece, none) {
+    if (none === void 0) {
+      none = null;
+    }
+
     var transFen = this.transFenBoardToZeros(this.fenBoard.split("/"));
-    var fenPieceRank = transFen[piece.drawingCoords.j];
-    fenPieceRank = fenPieceRank.substring(0, piece.drawingCoords.i) + "0" + fenPieceRank.substring(piece.drawingCoords.i + 1);
-    transFen[piece.drawingCoords.j] = fenPieceRank;
-    var newSquareRank = transFen[newSquare.coords.j];
-    newSquareRank = newSquareRank.substring(0, newSquare.coords.i) + piece.symbol + newSquareRank.substring(newSquare.coords.i + 1);
-    transFen[newSquare.coords.j] = newSquareRank;
+
+    if (piece && !none) {
+      var fenPieceRank = transFen[piece.drawingCoords.j];
+      fenPieceRank = fenPieceRank.substring(0, piece.drawingCoords.i) + "0" + fenPieceRank.substring(piece.drawingCoords.i + 1);
+      transFen[piece.drawingCoords.j] = fenPieceRank;
+      var newSquareRank = transFen[newSquare.coords.j];
+      newSquareRank = newSquareRank.substring(0, newSquare.coords.i) + piece.symbol + newSquareRank.substring(newSquare.coords.i + 1);
+      transFen[newSquare.coords.j] = newSquareRank;
+    } else {
+      var fenPieceRank = transFen[none.j];
+      fenPieceRank = fenPieceRank.substring(0, none.i) + "0" + fenPieceRank.substring(none.i + 1);
+      transFen[none.j] = fenPieceRank;
+    }
+
     transFen = this.transFenBoard(transFen);
     return transFen.join("/");
   };
 
-  FEN.prototype.addRemains = function (fenBoard) {
-    return fenBoard + " " + this.move + " " + this.permissions + " " + this.enPassant + " " + this.halfMoveClock + " " + this.fullMove;
+  FEN.prototype.addRemains = function (fenBoard, enPassant) {
+    if (enPassant === void 0) {
+      enPassant = "-";
+    }
+
+    return fenBoard + " " + this.move + " " + this.permissions + " " + enPassant + " " + this.halfMoveClock + " " + this.fullMove;
   };
 
   return FEN;
@@ -22498,7 +22636,7 @@ var __importDefault = this && this.__importDefault || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.p5 = exports.grid = exports.whitePieces = exports.blackPieces = void 0;
+exports.p5 = exports.fen = exports.grid = exports.whitePieces = exports.blackPieces = void 0;
 
 var p5_1 = __importDefault(require("p5"));
 
@@ -22527,7 +22665,6 @@ exports.whitePieces = {
 
 var sketch = function sketch(p5) {
   var SIZE = 900;
-  var fen;
 
   p5.preload = function () {
     var pieces = ["bishop", "king", "knight", "pawn", "queen", "rook"];
@@ -22557,13 +22694,11 @@ var sketch = function sketch(p5) {
     canvas.parent("sketch");
     p5.background(255, 255, 255);
     exports.grid = new Grid_2.default(SIZE);
-    console.log(exports.grid);
-    fen = new fen_1.default(SIZE / 8);
-    fen.load(Grid_1.SQUARES);
+    exports.fen = new fen_1.default(SIZE / 8);
+    exports.fen.load(Grid_1.SQUARES);
     Piece_1.pieces.forEach(function (piece) {
-      return piece.combineMoves();
+      piece.combineMoves();
     });
-    console.log(Grid_1.SQUARES);
   };
 
   p5.draw = function () {
@@ -22586,7 +22721,7 @@ var sketch = function sketch(p5) {
     Piece_1.pieces.forEach(function (piece) {
       piece.clickedOn(p5.mouseX, p5.mouseY);
     });
-    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, fen);
+    if (Piece_1.pieceSelected) Piece_1.pieceSelected.clickOnSquare(p5.mouseX, p5.mouseY, exports.fen);
   };
 };
 
@@ -22619,7 +22754,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45793" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51080" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

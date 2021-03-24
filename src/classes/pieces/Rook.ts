@@ -23,7 +23,7 @@ export default class Rook extends Piece {
   public combineMoves() {
     const moves = this.verticalAndHorizontal();
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
 
     return moves;
   }

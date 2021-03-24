@@ -13,7 +13,7 @@ export default class Knight extends Piece {
   ) {
     super("knight", square, symbol, color, position, size);
 
-    this.availablesMoves = this.move();
+    this.availableMoves = this.move();
   }
 
   private move() {
@@ -45,7 +45,7 @@ export default class Knight extends Piece {
 
   public combineMoves() {
     const moves = this.move();
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
     return moves;
   }
 }

@@ -29,10 +29,10 @@ export const whitePieces: {
 };
 
 export let grid: Grid;
+export let fen: FEN;
+
 const sketch = (p5: P5) => {
   const SIZE = 900;
-
-  let fen: FEN;
 
   p5.preload = () => {
     const pieces: pieceType[] = [
@@ -72,15 +72,14 @@ const sketch = (p5: P5) => {
     p5.background(255, 255, 255);
 
     grid = new Grid(SIZE);
-    console.log(grid);
 
     fen = new FEN(SIZE / 8);
 
     fen.load(SQUARES);
 
-    pieces.forEach((piece) => piece.combineMoves());
-
-    console.log(SQUARES);
+    pieces.forEach((piece) => {
+      piece.combineMoves();
+    });
   };
 
   p5.draw = () => {

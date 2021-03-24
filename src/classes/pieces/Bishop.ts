@@ -28,7 +28,7 @@ export default class Bishop extends Piece {
 
     const moves = [...topLeft, ...topRight, ...bottomLeft, ...bottomRight];
 
-    this.availablesMoves = moves;
+    this.availableMoves = moves;
 
     return moves;
   }
