@@ -154,6 +154,14 @@ export default class Piece {
     }
 
     if (newSquare) {
+      if (this.type === "pawn") {
+        const toEat = ((this as unknown) as Pawn).canEatOnEnPassant.find(
+          (item) => item.eatOnSquare === newSquare
+        );
+        if (toEat) {
+          pieces = pieces.filter((piece) => piece !== toEat.pieceToEat);
+        }
+      }
       if (newSquare.piece) {
         pieces = pieces.filter((piece) => piece !== newSquare!.piece);
       }
