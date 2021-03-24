@@ -2,7 +2,7 @@ import Piece, { LAST_MOVES } from "./Piece";
 import { file } from "../../interfaces/grid";
 import Square from "../Square";
 import { SQUARES } from "../Grid";
-import { fen, grid } from "../../sketch";
+import { grid } from "../../sketch";
 
 export default class Pawn extends Piece {
   canEatOnEnPassant: { eatOnSquare: Square; pieceToEat: Pawn }[];
@@ -19,13 +19,14 @@ export default class Pawn extends Piece {
     this.canEatOnEnPassant = [];
   }
 
+  public enPassantString = "-";
+
   private frontMove() {
     const order = this.color === "white" ? -1 : 1;
     const moves = [];
 
     const forwardSquare = SQUARES[this.square.index + 8 * order];
     if (forwardSquare && forwardSquare.piece === null) {
-      // console.log(this, forwardSquare.piece);
       moves.push(forwardSquare);
     }
 
@@ -36,14 +37,26 @@ export default class Pawn extends Piece {
 
     const enemies: Square[] = [];
 
-    const enemyOne =
-      grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1];
-    const enemyTwo =
-      grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1];
+    const enemyOne = grid.grid[this.drawingCoords.j + 1 * order]
+      ? grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1]
+      : null;
+    const enemyTwo = grid.grid[this.drawingCoords.j + 1 * order]
+      ? grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1]
+      : null;
 
-    if (enemyOne && enemyOne.piece && enemyOne.piece.color !== this.color)
+    if (
+      enemyOne &&
+      enemyOne.piece &&
+      enemyOne.piece.color !== this.color &&
+      enemyOne.piece.type !== "king"
+    )
       enemies.push(enemyOne);
-    if (enemyTwo && enemyTwo.piece && enemyTwo.piece.color !== this.color)
+    if (
+      enemyTwo &&
+      enemyTwo.piece &&
+      enemyTwo.piece.color !== this.color &&
+      enemyTwo.piece.type !== "king"
+    )
       enemies.push(enemyTwo);
 
     moves.push(...enemies);
@@ -52,11 +65,11 @@ export default class Pawn extends Piece {
   }
 
   public didIMoveTwoSquares() {
-    const prev = this.history[this.history.length - 2].rank;
-    const last = this.history[this.history.length - 1].rank;
+    const prev = this.history[this.history.length - 2];
+    const last = this.history[this.history.length - 1];
 
     if (prev && last) {
-      return Math.abs(prev - last) === 2;
+      return Math.abs(prev.rank - last.rank) === 2;
     }
 
     return false;
@@ -71,6 +84,9 @@ export default class Pawn extends Piece {
 
     const squares = [leftSquare, rightSquare];
 
+    this.canEatOnEnPassant = [];
+    this.enPassantString = "-";
+
     squares.forEach((square) => {
       if (
         square &&
@@ -83,14 +99,15 @@ export default class Pawn extends Piece {
         const order = this.color === "white" ? -1 : 1;
         const eatOnSquare = SQUARES[square.index + 8 * order];
 
-        console.log("Last move", LAST_MOVES[1]);
-        console.log("Square:", square);
-
         if (eatOnSquare && !eatOnSquare.piece) {
           this.canEatOnEnPassant.push({
             eatOnSquare,
             pieceToEat: square.piece as Pawn
           });
+          this.enPassantString = `${eatOnSquare.coords.file.toLowerCase()}${
+            eatOnSquare.coords.rank
+          }`;
+
           moves.push(eatOnSquare);
         }
       }

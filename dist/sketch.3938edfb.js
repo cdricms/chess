@@ -21527,12 +21527,11 @@ function () {
       if (!(exports.pieceSelected && exports.pieceSelected.availableMoves.find(function (square) {
         return square === _this.square;
       }))) exports.pieceSelected = this;
-      console.log(this);
     }
   };
 
   Piece.prototype.clickOnSquare = function (mousex, mousey, fen) {
-    var newSquare = null;
+    var newSquare = null; // If there are moves available, assigning the move as the new square
 
     if (this.availableMoves.length > 0) {
       for (var _i = 0, _a = this.availableMoves; _i < _a.length; _i++) {
@@ -21542,23 +21541,54 @@ function () {
       }
     }
 
+    var enPassant = null;
+
     if (newSquare) {
+      if (this.type === "pawn") {
+        var toEat_1 = this.canEatOnEnPassant.find(function (item) {
+          return item.eatOnSquare === newSquare;
+        });
+
+        if (toEat_1) {
+          exports.pieces = exports.pieces.filter(function (piece) {
+            return piece !== toEat_1.pieceToEat;
+          });
+          toEat_1.pieceToEat.square.piece = null;
+          enPassant = toEat_1;
+        }
+      }
+
       if (newSquare.piece) {
         exports.pieces = exports.pieces.filter(function (piece) {
           return piece !== newSquare.piece;
         });
       }
 
-      this.changeSquare(newSquare, fen);
+      this.changeSquare(newSquare, fen, enPassant);
     }
   };
 
-  Piece.prototype.changeSquare = function (newSquare, fen) {
-    var fenBoard = fen.updateFenBoard(newSquare, this);
-    var newFen = fen.addRemains(fenBoard);
-    var oldSquare = this.square;
-    fen.fen = newFen;
-    fen.fenHistory.push(fen.fen);
+  Piece.prototype.changeSquare = function (newSquare, fen, enPassant) {
+    // Set the old square to the actual square
+    var oldSquare = this.square; // Updating the fen board
+
+    var fenBoard = fen.updateFenBoard(newSquare, this); // Adding the remainings to the fen board, to have a complete fen
+
+    var newFen = fen.addRemains(fenBoard); // Setting the fen to the new one
+
+    fen.fen = newFen; // If enPassant move is made, update the fen
+
+    if (enPassant) {
+      var fenBoard_1 = fen.updateFenBoard(enPassant.eatOnSquare, null, {
+        square: "0",
+        i: enPassant.pieceToEat.drawingCoords.i,
+        j: enPassant.pieceToEat.drawingCoords.j
+      });
+      var newFen_1 = fen.addRemains(fenBoard_1);
+      fen.fen = newFen_1;
+    } // Updating the properties of the piece
+
+
     this.drawingCoords = {
       i: newSquare.coords.i,
       j: newSquare.coords.j
@@ -21568,17 +21598,30 @@ function () {
     this.position.fileNumber = this.getFileNumber();
     this.square = newSquare;
     this.square.piece = this;
-    oldSquare.piece = null;
-    this.history.push(__assign({}, this.position)); // console.log(this.square, oldSquare);
+    oldSquare.piece = null; //
 
     exports.LAST_MOVES = [oldSquare, newSquare];
+    this.history.push(__assign({}, this.position));
     exports.pieces.forEach(function (piece) {
       piece.combineMoves();
-    });
-    console.log(this);
+    }); // Updating for the enPassant string
+
+    var enPassantString = "-"; // Getting the only pawn that has an en passant move
+
+    var rightPawn = exports.pieces.find(function (piece) {
+      return piece.type === "pawn" && piece.enPassantString !== "-";
+    }); // If found update enPassantString to the right square
+
+    if (rightPawn) {
+      enPassantString = rightPawn.enPassantString;
+    } // Updating the fen with en passant
+
+
+    var fenEnPassant = fen.addRemains(fen.fen.split(" ")[0], enPassantString);
+    fen.fen = fenEnPassant;
     exports.pieceSelected = null;
     document.getElementById("fen").innerHTML = "FEN: " + fen.fen;
-    console.log(fen);
+    fen.fenHistory.push(fen.fen);
   };
 
   return Piece;
@@ -22119,6 +22162,7 @@ function (_super) {
     _this.size = size;
     _this.square = square;
     _this.symbol = symbol;
+    _this.enPassantString = "-";
     _this.canEatOnEnPassant = [];
     return _this;
   }
@@ -22129,7 +22173,6 @@ function (_super) {
     var forwardSquare = Grid_1.SQUARES[this.square.index + 8 * order];
 
     if (forwardSquare && forwardSquare.piece === null) {
-      // console.log(this, forwardSquare.piece);
       moves.push(forwardSquare);
     }
 
@@ -22139,20 +22182,20 @@ function (_super) {
     }
 
     var enemies = [];
-    var enemyOne = sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1];
-    var enemyTwo = sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1];
-    if (enemyOne && enemyOne.piece && enemyOne.piece.color !== this.color) enemies.push(enemyOne);
-    if (enemyTwo && enemyTwo.piece && enemyTwo.piece.color !== this.color) enemies.push(enemyTwo);
+    var enemyOne = sketch_1.grid.grid[this.drawingCoords.j + 1 * order] ? sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i + 1] : null;
+    var enemyTwo = sketch_1.grid.grid[this.drawingCoords.j + 1 * order] ? sketch_1.grid.grid[this.drawingCoords.j + 1 * order][this.drawingCoords.i - 1] : null;
+    if (enemyOne && enemyOne.piece && enemyOne.piece.color !== this.color && enemyOne.piece.type !== "king") enemies.push(enemyOne);
+    if (enemyTwo && enemyTwo.piece && enemyTwo.piece.color !== this.color && enemyTwo.piece.type !== "king") enemies.push(enemyTwo);
     moves.push.apply(moves, enemies);
     return moves;
   };
 
   Pawn.prototype.didIMoveTwoSquares = function () {
-    var prev = this.history[this.history.length - 2].rank;
-    var last = this.history[this.history.length - 1].rank;
+    var prev = this.history[this.history.length - 2];
+    var last = this.history[this.history.length - 1];
 
     if (prev && last) {
-      return Math.abs(prev - last) === 2;
+      return Math.abs(prev.rank - last.rank) === 2;
     }
 
     return false;
@@ -22165,12 +22208,12 @@ function (_super) {
     var leftSquare = this.position.file === "A" ? null : Grid_1.SQUARES[this.square.index - 1];
     var rightSquare = this.position.file === "H" ? null : Grid_1.SQUARES[this.square.index + 1];
     var squares = [leftSquare, rightSquare];
+    this.canEatOnEnPassant = [];
+    this.enPassantString = "-";
     squares.forEach(function (square) {
       if (square && square.piece && square.piece.color !== _this.color && square.piece.type === "pawn" && square.piece.didIMoveTwoSquares() && Piece_1.LAST_MOVES[1].piece === square.piece) {
         var order = _this.color === "white" ? -1 : 1;
         var eatOnSquare = Grid_1.SQUARES[square.index + 8 * order];
-        console.log("Last move", Piece_1.LAST_MOVES[1]);
-        console.log("Square:", square);
 
         if (eatOnSquare && !eatOnSquare.piece) {
           _this.canEatOnEnPassant.push({
@@ -22178,6 +22221,7 @@ function (_super) {
             pieceToEat: square.piece
           });
 
+          _this.enPassantString = "" + eatOnSquare.coords.file.toLowerCase() + eatOnSquare.coords.rank;
           moves.push(eatOnSquare);
         }
       }
@@ -22414,7 +22458,8 @@ var FEN =
 function () {
   function FEN(size) {
     this.size = size;
-    this.currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
+    this.currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // "rnbqkbnr/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
     // "b6b/8/6q1/8/r2n4/2k5/8/B6B w KQkq - 0 1";
 
     this.fenBoard = this.getFenBoard();
@@ -22434,7 +22479,6 @@ function () {
     set: function set(fen) {
       this.currentFen = fen;
       this.fenBoard = this.getFenBoard();
-      console.log(this.fenBoard, this.currentFen);
     },
     enumerable: false,
     configurable: true
@@ -22544,21 +22588,36 @@ function () {
     return result;
   };
 
-  FEN.prototype.updateFenBoard = function (newSquare, piece) {
-    console.log(newSquare, piece);
+  FEN.prototype.updateFenBoard = function (newSquare, piece, none) {
+    if (none === void 0) {
+      none = null;
+    }
+
     var transFen = this.transFenBoardToZeros(this.fenBoard.split("/"));
-    var fenPieceRank = transFen[piece.drawingCoords.j];
-    fenPieceRank = fenPieceRank.substring(0, piece.drawingCoords.i) + "0" + fenPieceRank.substring(piece.drawingCoords.i + 1);
-    transFen[piece.drawingCoords.j] = fenPieceRank;
-    var newSquareRank = transFen[newSquare.coords.j];
-    newSquareRank = newSquareRank.substring(0, newSquare.coords.i) + piece.symbol + newSquareRank.substring(newSquare.coords.i + 1);
-    transFen[newSquare.coords.j] = newSquareRank;
+
+    if (piece && !none) {
+      var fenPieceRank = transFen[piece.drawingCoords.j];
+      fenPieceRank = fenPieceRank.substring(0, piece.drawingCoords.i) + "0" + fenPieceRank.substring(piece.drawingCoords.i + 1);
+      transFen[piece.drawingCoords.j] = fenPieceRank;
+      var newSquareRank = transFen[newSquare.coords.j];
+      newSquareRank = newSquareRank.substring(0, newSquare.coords.i) + piece.symbol + newSquareRank.substring(newSquare.coords.i + 1);
+      transFen[newSquare.coords.j] = newSquareRank;
+    } else {
+      var fenPieceRank = transFen[none.j];
+      fenPieceRank = fenPieceRank.substring(0, none.i) + "0" + fenPieceRank.substring(none.i + 1);
+      transFen[none.j] = fenPieceRank;
+    }
+
     transFen = this.transFenBoard(transFen);
     return transFen.join("/");
   };
 
-  FEN.prototype.addRemains = function (fenBoard) {
-    return fenBoard + " " + this.move + " " + this.permissions + " " + this.enPassant + " " + this.halfMoveClock + " " + this.fullMove;
+  FEN.prototype.addRemains = function (fenBoard, enPassant) {
+    if (enPassant === void 0) {
+      enPassant = "-";
+    }
+
+    return fenBoard + " " + this.move + " " + this.permissions + " " + enPassant + " " + this.halfMoveClock + " " + this.fullMove;
   };
 
   return FEN;
@@ -22635,13 +22694,11 @@ var sketch = function sketch(p5) {
     canvas.parent("sketch");
     p5.background(255, 255, 255);
     exports.grid = new Grid_2.default(SIZE);
-    console.log(exports.grid);
     exports.fen = new fen_1.default(SIZE / 8);
     exports.fen.load(Grid_1.SQUARES);
     Piece_1.pieces.forEach(function (piece) {
       piece.combineMoves();
     });
-    console.log(Grid_1.SQUARES);
   };
 
   p5.draw = function () {
@@ -22697,7 +22754,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "33127" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51080" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

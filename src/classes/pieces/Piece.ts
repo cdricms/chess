@@ -137,14 +137,13 @@ export default class Piece {
         )
       )
         pieceSelected = this;
-
-      console.log(this);
     }
   }
 
   public clickOnSquare(mousex: number, mousey: number, fen: FEN) {
     let newSquare: Square | null = null;
 
+    // If there are moves available, assigning the move as the new square
     if (this.availableMoves.length > 0) {
       for (let move of this.availableMoves) {
         const hb = this.hitbox(mousex, mousey, move);
@@ -153,6 +152,8 @@ export default class Piece {
       }
     }
 
+    let enPassant: typeof Pawn.prototype.canEatOnEnPassant[0] | null = null;
+
     if (newSquare) {
       if (this.type === "pawn") {
         const toEat = ((this as unknown) as Pawn).canEatOnEnPassant.find(
@@ -160,23 +161,46 @@ export default class Piece {
         );
         if (toEat) {
           pieces = pieces.filter((piece) => piece !== toEat.pieceToEat);
+          toEat.pieceToEat.square.piece = null;
+          enPassant = toEat;
         }
       }
       if (newSquare.piece) {
         pieces = pieces.filter((piece) => piece !== newSquare!.piece);
       }
-      this.changeSquare(newSquare, fen);
+      this.changeSquare(newSquare, fen, enPassant);
     }
   }
 
-  private changeSquare(newSquare: Square, fen: FEN) {
-    const fenBoard = fen.updateFenBoard(newSquare, this);
-    const newFen = fen.addRemains(fenBoard);
+  private changeSquare(
+    newSquare: Square,
+    fen: FEN,
+    enPassant: typeof Pawn.prototype.canEatOnEnPassant[0] | null
+  ) {
+    // Set the old square to the actual square
     const oldSquare = this.square;
 
-    fen.fen = newFen;
-    fen.fenHistory.push(fen.fen);
+    // Updating the fen board
+    const fenBoard = fen.updateFenBoard(newSquare, this);
 
+    // Adding the remainings to the fen board, to have a complete fen
+    const newFen = fen.addRemains(fenBoard);
+
+    // Setting the fen to the new one
+    fen.fen = newFen;
+
+    // If enPassant move is made, update the fen
+    if (enPassant) {
+      const fenBoard = fen.updateFenBoard(enPassant.eatOnSquare, null, {
+        square: "0",
+        i: enPassant.pieceToEat.drawingCoords.i,
+        j: enPassant.pieceToEat.drawingCoords.j
+      });
+      const newFen = fen.addRemains(fenBoard);
+      fen.fen = newFen;
+    }
+
+    // Updating the properties of the piece
     this.drawingCoords = { i: newSquare.coords.i, j: newSquare.coords.j };
     this.position!.file = newSquare.coords.file;
     this.position!.rank = newSquare.coords.rank;
@@ -185,18 +209,36 @@ export default class Piece {
     this.square = newSquare;
     this.square.piece = this;
     oldSquare.piece = null;
-    this.history.push({ ...this.position! });
-    // console.log(this.square, oldSquare);
+    //
     LAST_MOVES = [oldSquare, newSquare];
+    this.history.push({ ...this.position! });
+
     pieces.forEach((piece) => {
       piece.combineMoves();
     });
 
-    console.log(this);
+    // Updating for the enPassant string
+    let enPassantString = "-";
+
+    // Getting the only pawn that has an en passant move
+    const rightPawn = pieces.find(
+      (piece) =>
+        piece.type === "pawn" && (piece as Pawn).enPassantString !== "-"
+    );
+
+    // If found update enPassantString to the right square
+    if (rightPawn) {
+      enPassantString = (rightPawn as Pawn).enPassantString;
+    }
+
+    // Updating the fen with en passant
+    const fenEnPassant = fen.addRemains(fen.fen.split(" ")[0], enPassantString);
+    fen.fen = fenEnPassant;
+
     pieceSelected = null;
 
     document.getElementById("fen")!.innerHTML = "FEN: " + fen.fen;
 
-    console.log(fen);
+    fen.fenHistory.push(fen.fen);
   }
 }

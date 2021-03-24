@@ -13,6 +13,7 @@ export default class FEN {
 
   private currentFen =
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  // "rnbqkbnr/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
   // "b6b/8/8/8/r2nq3/2k5/8/B6B w KQkq - 0 1";
   // "b6b/8/6q1/8/r2n4/2k5/8/B6B w KQkq - 0 1";
 
@@ -50,7 +51,6 @@ export default class FEN {
   set fen(fen: string) {
     this.currentFen = fen;
     this.fenBoard = this.getFenBoard();
-    console.log(this.fenBoard, this.currentFen);
   }
 
   private getFenBoard() {
@@ -155,30 +155,41 @@ export default class FEN {
     return result;
   }
 
-  public updateFenBoard(newSquare: Square, piece: Piece) {
-    console.log(newSquare, piece);
-
+  public updateFenBoard(
+    newSquare: Square,
+    piece: Piece | null,
+    none: { square: "0"; i: number; j: number } | null = null
+  ) {
     let transFen = this.transFenBoardToZeros(this.fenBoard.split("/"));
-    let fenPieceRank = transFen[piece.drawingCoords.j];
-    fenPieceRank =
-      fenPieceRank.substring(0, piece.drawingCoords.i) +
-      "0" +
-      fenPieceRank.substring(piece.drawingCoords.i + 1);
-    transFen[piece.drawingCoords.j] = fenPieceRank;
+    if (piece && !none) {
+      let fenPieceRank = transFen[piece.drawingCoords.j];
+      fenPieceRank =
+        fenPieceRank.substring(0, piece.drawingCoords.i) +
+        "0" +
+        fenPieceRank.substring(piece.drawingCoords.i + 1);
+      transFen[piece.drawingCoords.j] = fenPieceRank;
 
-    let newSquareRank = transFen[newSquare.coords.j];
-    newSquareRank =
-      newSquareRank.substring(0, newSquare.coords.i) +
-      piece.symbol +
-      newSquareRank.substring(newSquare.coords.i + 1);
-    transFen[newSquare.coords.j] = newSquareRank;
+      let newSquareRank = transFen[newSquare.coords.j];
+      newSquareRank =
+        newSquareRank.substring(0, newSquare.coords.i) +
+        piece.symbol +
+        newSquareRank.substring(newSquare.coords.i + 1);
+      transFen[newSquare.coords.j] = newSquareRank;
+    } else {
+      let fenPieceRank = transFen[none!.j];
+      fenPieceRank =
+        fenPieceRank.substring(0, none!.i) +
+        "0" +
+        fenPieceRank.substring(none!.i + 1);
+      transFen[none!.j] = fenPieceRank;
+    }
 
     transFen = this.transFenBoard(transFen);
 
     return transFen.join("/");
   }
 
-  public addRemains(fenBoard: string) {
-    return `${fenBoard} ${this.move} ${this.permissions} ${this.enPassant} ${this.halfMoveClock} ${this.fullMove}`;
+  public addRemains(fenBoard: string, enPassant: string = "-") {
+    return `${fenBoard} ${this.move} ${this.permissions} ${enPassant} ${this.halfMoveClock} ${this.fullMove}`;
   }
 }

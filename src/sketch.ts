@@ -5,7 +5,6 @@ import Square from "./classes/Square";
 import { pieceType, image } from "./interfaces/pieces";
 import FEN from "./utils/fen";
 import { LAST_MOVES, pieces, pieceSelected } from "./classes/pieces/Piece";
-import Pawn from "./classes/pieces/Pawn";
 
 const debug = document.getElementById("debug");
 const debugBtn = document.getElementById("debugBtn");
@@ -73,7 +72,6 @@ const sketch = (p5: P5) => {
     p5.background(255, 255, 255);
 
     grid = new Grid(SIZE);
-    console.log(grid);
 
     fen = new FEN(SIZE / 8);
 
@@ -82,8 +80,6 @@ const sketch = (p5: P5) => {
     pieces.forEach((piece) => {
       piece.combineMoves();
     });
-
-    console.log(SQUARES);
   };
 
   p5.draw = () => {
