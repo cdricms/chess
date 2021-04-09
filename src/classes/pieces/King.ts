@@ -4,6 +4,7 @@ import Square from "../Square";
 import { grid } from "../../sketch";
 
 export default class King extends Piece {
+  permissionMoves: Square[] = [];
   constructor(
     readonly color: "black" | "white",
     readonly position: { file: file; rank: number },
@@ -12,6 +13,7 @@ export default class King extends Piece {
     readonly symbol: string
   ) {
     super("king", square, symbol, color, position, size);
+    this.permissionMoves = [];
   }
 
   private permissions() {
@@ -49,7 +51,7 @@ export default class King extends Piece {
       }
 
       if (emptyLeftSide.length === 3 && queenSide?.history.length === 1)
-        moves.push(grid.grid[this.drawingCoords.j][this.drawingCoords.i - 3]);
+        moves.push(grid.grid[this.drawingCoords.j][this.drawingCoords.i - 2]);
       if (emptyRightSide.length === 2 && kingSide?.history.length === 1)
         moves.push(grid.grid[this.drawingCoords.j][this.drawingCoords.i + 2]);
     }
@@ -87,7 +89,8 @@ export default class King extends Piece {
 
   public combineMoves() {
     const moves = this.moves();
-    this.availableMoves = [...moves, ...this.permissions()];
+    this.permissionMoves = this.permissions();
+    this.availableMoves = [...moves, ...this.permissionMoves];
     return moves;
   }
 }
