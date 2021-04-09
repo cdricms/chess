@@ -2,9 +2,9 @@ import Piece from "./Piece";
 import { file } from "../../interfaces/grid";
 import Square from "../Square";
 import { grid } from "../../sketch";
-import { SQUARES } from "../Grid";
 
 export default class King extends Piece {
+  permissionMoves: Square[] = [];
   constructor(
     readonly color: "black" | "white",
     readonly position: { file: file; rank: number },
@@ -13,6 +13,50 @@ export default class King extends Piece {
     readonly symbol: string
   ) {
     super("king", square, symbol, color, position, size);
+    this.permissionMoves = [];
+  }
+
+  private permissions() {
+    const moves: Square[] = [];
+
+    if (
+      this.history.length === 1 &&
+      this.position.file === "E" &&
+      (this.position.rank === 1 || this.position.rank === 8)
+    ) {
+      const kingSide =
+        grid.grid[this.drawingCoords.j][this.drawingCoords.i + 3]?.piece;
+      const queenSide =
+        grid.grid[this.drawingCoords.j][this.drawingCoords.i - 4]?.piece;
+
+      const emptyRightSide = [];
+      const emptyLeftSide = [];
+
+      for (let i = 1; i < 3; i++) {
+        let rightSide =
+          grid.grid[this.drawingCoords.j][this.drawingCoords.i + i];
+
+        if (rightSide.piece) break;
+
+        emptyRightSide.push(rightSide);
+      }
+
+      for (let i = 1; i < 4; i++) {
+        let leftSide =
+          grid.grid[this.drawingCoords.j][this.drawingCoords.i - i];
+
+        if (leftSide.piece) break;
+
+        emptyLeftSide.push(leftSide);
+      }
+
+      if (emptyLeftSide.length === 3 && queenSide?.history.length === 1)
+        moves.push(grid.grid[this.drawingCoords.j][this.drawingCoords.i - 2]);
+      if (emptyRightSide.length === 2 && kingSide?.history.length === 1)
+        moves.push(grid.grid[this.drawingCoords.j][this.drawingCoords.i + 2]);
+    }
+
+    return moves;
   }
 
   private moves() {
@@ -45,7 +89,8 @@ export default class King extends Piece {
 
   public combineMoves() {
     const moves = this.moves();
-    this.availableMoves = moves;
+    this.permissionMoves = this.permissions();
+    this.availableMoves = [...moves, ...this.permissionMoves];
     return moves;
   }
 }

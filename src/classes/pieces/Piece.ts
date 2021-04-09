@@ -1,5 +1,5 @@
 import p5 from "p5";
-import { LETTERS } from "../Grid";
+import { LETTERS, SQUARES } from "../Grid";
 import { file } from "../../interfaces/grid";
 import { image, pieceType } from "../../interfaces/pieces";
 import { blackPieces, whitePieces } from "../../sketch";
@@ -7,6 +7,7 @@ import { p5 as pF } from "../../sketch";
 import Square from "../Square";
 import FEN from "../../utils/fen";
 import Pawn from "./Pawn";
+import King from "./King";
 
 export let pieceSelected: null | Piece = null;
 export let pieces: Piece[] = [];
@@ -172,7 +173,7 @@ export default class Piece {
     }
   }
 
-  private changeSquare(
+  public changeSquare(
     newSquare: Square,
     fen: FEN,
     enPassant: typeof Pawn.prototype.canEatOnEnPassant[0] | null
@@ -188,6 +189,24 @@ export default class Piece {
 
     // Setting the fen to the new one
     fen.fen = newFen;
+
+    if (this.type === "king") {
+      const king = (this as unknown) as King;
+      if (
+        king.permissionMoves.length > 0 &&
+        king.permissionMoves.find((square) => square === newSquare)
+      ) {
+        if (king.square.index - newSquare.index === 2) {
+          const rookSquare = SQUARES[king.square.index - 4];
+          const rooksNewSquare = SQUARES[rookSquare.index + 3];
+          rookSquare.piece!.changeSquare(rooksNewSquare, fen, null);
+        } else if (king.square.index - newSquare.index === -2) {
+          const rookSquare = SQUARES[king.square.index + 3];
+          const rooksNewSquare = SQUARES[rookSquare.index - 2];
+          rookSquare.piece!.changeSquare(rooksNewSquare, fen, null);
+        }
+      }
+    }
 
     // If enPassant move is made, update the fen
     if (enPassant) {

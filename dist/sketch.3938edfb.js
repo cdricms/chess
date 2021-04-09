@@ -21589,7 +21589,26 @@ function () {
 
     var newFen = fen.addRemains(fenBoard); // Setting the fen to the new one
 
-    fen.fen = newFen; // If enPassant move is made, update the fen
+    fen.fen = newFen;
+
+    if (this.type === "king") {
+      var king = this;
+
+      if (king.permissionMoves.length > 0 && king.permissionMoves.find(function (square) {
+        return square === newSquare;
+      })) {
+        if (king.square.index - newSquare.index === 2) {
+          var rookSquare = Grid_1.SQUARES[king.square.index - 4];
+          var rooksNewSquare = Grid_1.SQUARES[rookSquare.index + 3];
+          rookSquare.piece.changeSquare(rooksNewSquare, fen, null);
+        } else if (king.square.index - newSquare.index === -2) {
+          var rookSquare = Grid_1.SQUARES[king.square.index + 3];
+          var rooksNewSquare = Grid_1.SQUARES[rookSquare.index - 2];
+          rookSquare.piece.changeSquare(rooksNewSquare, fen, null);
+        }
+      }
+    } // If enPassant move is made, update the fen
+
 
     if (enPassant) {
       var fenBoard_1 = fen.updateFenBoard(enPassant.eatOnSquare, null, {
@@ -21933,6 +21952,14 @@ var __extends = this && this.__extends || function () {
   };
 }();
 
+var __spreadArray = this && this.__spreadArray || function (to, from) {
+  for (var i = 0, il = from.length, j = to.length; i < il; i++, j++) {
+    to[j] = from[i];
+  }
+
+  return to;
+};
+
 var __importDefault = this && this.__importDefault || function (mod) {
   return mod && mod.__esModule ? mod : {
     "default": mod
@@ -21960,8 +21987,40 @@ function (_super) {
     _this.size = size;
     _this.square = square;
     _this.symbol = symbol;
+    _this.permissionMoves = [];
+    _this.permissionMoves = [];
     return _this;
   }
+
+  King.prototype.permissions = function () {
+    var _a, _b;
+
+    var moves = [];
+
+    if (this.history.length === 1 && this.position.file === "E" && (this.position.rank === 1 || this.position.rank === 8)) {
+      var kingSide = (_a = sketch_1.grid.grid[this.drawingCoords.j][this.drawingCoords.i + 3]) === null || _a === void 0 ? void 0 : _a.piece;
+      var queenSide = (_b = sketch_1.grid.grid[this.drawingCoords.j][this.drawingCoords.i - 4]) === null || _b === void 0 ? void 0 : _b.piece;
+      var emptyRightSide = [];
+      var emptyLeftSide = [];
+
+      for (var i = 1; i < 3; i++) {
+        var rightSide = sketch_1.grid.grid[this.drawingCoords.j][this.drawingCoords.i + i];
+        if (rightSide.piece) break;
+        emptyRightSide.push(rightSide);
+      }
+
+      for (var i = 1; i < 4; i++) {
+        var leftSide = sketch_1.grid.grid[this.drawingCoords.j][this.drawingCoords.i - i];
+        if (leftSide.piece) break;
+        emptyLeftSide.push(leftSide);
+      }
+
+      if (emptyLeftSide.length === 3 && (queenSide === null || queenSide === void 0 ? void 0 : queenSide.history.length) === 1) moves.push(sketch_1.grid.grid[this.drawingCoords.j][this.drawingCoords.i - 2]);
+      if (emptyRightSide.length === 2 && (kingSide === null || kingSide === void 0 ? void 0 : kingSide.history.length) === 1) moves.push(sketch_1.grid.grid[this.drawingCoords.j][this.drawingCoords.i + 2]);
+    }
+
+    return moves;
+  };
 
   King.prototype.moves = function () {
     var _a, _b;
@@ -21988,7 +22047,8 @@ function (_super) {
 
   King.prototype.combineMoves = function () {
     var moves = this.moves();
-    this.availableMoves = moves;
+    this.permissionMoves = this.permissions();
+    this.availableMoves = __spreadArray(__spreadArray([], moves), this.permissionMoves);
     return moves;
   };
 
@@ -22767,7 +22827,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54220" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52238" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
