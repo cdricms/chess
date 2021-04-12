@@ -21634,9 +21634,40 @@ function () {
 
     exports.LAST_MOVES = [oldSquare, newSquare];
     this.history.push(__assign({}, this.position));
+    /************************* ***********************/
+
+    /******************* PERMISSIONS *****************/
+
+    /************************* ***********************/
+
+    var permission = "";
+    var rooks = [];
     exports.pieces.forEach(function (piece) {
       piece.combineMoves();
-    }); // Updating for the enPassant string
+
+      if (piece.type === "rook") {
+        if (piece.history.length === 1) {
+          if (piece.position.file === "H" && piece.color === "white") {
+            rooks[0] = "K";
+          } else if (piece.position.file === "A" && piece.color === "white") {
+            rooks[1] = "Q";
+          } else if (piece.position.file === "H" && piece.color === "black") {
+            rooks[2] = "k";
+          } else if (piece.position.file === "A" && piece.color === "black") {
+            rooks[3] = "q";
+          }
+        }
+      }
+    });
+
+    for (var _i = 0, rooks_1 = rooks; _i < rooks_1.length; _i++) {
+      var perm = rooks_1[_i];
+      if (perm) permission += perm;
+    }
+
+    if (permission.length === 0) permission = "-";
+    /******************************************************************/
+    // Updating for the enPassant string
 
     var enPassantString = "-"; // Getting the only pawn that has an en passant move
 
@@ -21649,7 +21680,7 @@ function () {
     } // Updating the fen with en passant
 
 
-    var fenEnPassant = fen.addRemains(fen.fen.split(" ")[0], enPassantString);
+    var fenEnPassant = fen.addRemains(fen.fen.split(" ")[0], enPassantString, permission);
     fen.fen = fenEnPassant;
     exports.pieceSelected = null;
     document.getElementById("fen").innerHTML = "FEN: " + fen.fen;
@@ -22685,12 +22716,16 @@ function () {
     return transFen.join("/");
   };
 
-  FEN.prototype.addRemains = function (fenBoard, enPassant) {
+  FEN.prototype.addRemains = function (fenBoard, enPassant, permission) {
     if (enPassant === void 0) {
       enPassant = "-";
     }
 
-    return fenBoard + " " + this.move + " " + this.permissions + " " + enPassant + " " + this.halfMoveClock + " " + this.fullMove;
+    if (permission === void 0) {
+      permission = "-";
+    }
+
+    return fenBoard + " " + this.move + " " + permission + " " + enPassant + " " + this.halfMoveClock + " " + this.fullMove;
   };
 
   return FEN;
@@ -22827,7 +22862,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52238" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60364" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
