@@ -189,7 +189,11 @@ export default class FEN {
     return transFen.join("/");
   }
 
-  public addRemains(fenBoard: string, enPassant: string = "-") {
-    return `${fenBoard} ${this.move} ${this.permissions} ${enPassant} ${this.halfMoveClock} ${this.fullMove}`;
+  public addRemains(
+    fenBoard: string,
+    enPassant: string = "-",
+    permission: string = "-"
+  ) {
+    return `${fenBoard} ${this.move} ${permission} ${enPassant} ${this.halfMoveClock} ${this.fullMove}`;
   }
 }

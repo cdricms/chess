@@ -8,6 +8,7 @@ import Square from "../Square";
 import FEN from "../../utils/fen";
 import Pawn from "./Pawn";
 import King from "./King";
+import Rook from "./Rook";
 
 export let pieceSelected: null | Piece = null;
 export let pieces: Piece[] = [];
@@ -232,9 +233,37 @@ export default class Piece {
     LAST_MOVES = [oldSquare, newSquare];
     this.history.push({ ...this.position! });
 
+    /************************* ***********************/
+    /******************* PERMISSIONS *****************/
+    /************************* ***********************/
+    let permission: string = "";
+
+    const rooks: string[] = [];
+
     pieces.forEach((piece) => {
       piece.combineMoves();
+      if (piece.type === "rook") {
+        if (piece.history.length === 1) {
+          if (piece.position!.file === "H" && piece.color === "white") {
+            rooks[0] = "K";
+          } else if (piece.position!.file === "A" && piece.color === "white") {
+            rooks[1] = "Q";
+          } else if (piece.position!.file === "H" && piece.color === "black") {
+            rooks[2] = "k";
+          } else if (piece.position!.file === "A" && piece.color === "black") {
+            rooks[3] = "q";
+          }
+        }
+      }
     });
+
+    for (let perm of rooks) {
+      if (perm) permission += perm;
+    }
+
+    if (permission.length === 0) permission = "-";
+
+    /******************************************************************/
 
     // Updating for the enPassant string
     let enPassantString = "-";
@@ -251,7 +280,11 @@ export default class Piece {
     }
 
     // Updating the fen with en passant
-    const fenEnPassant = fen.addRemains(fen.fen.split(" ")[0], enPassantString);
+    const fenEnPassant = fen.addRemains(
+      fen.fen.split(" ")[0],
+      enPassantString,
+      permission
+    );
     fen.fen = fenEnPassant;
 
     pieceSelected = null;
