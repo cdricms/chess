@@ -13,6 +13,10 @@ import Rook from "./Rook";
 export let pieceSelected: null | Piece = null;
 export let pieces: Piece[] = [];
 export let LAST_MOVES: Square[] = [];
+export let MOVES: { black: Square[]; white: Square[] } = {
+  black: [],
+  white: []
+};
 
 export default class Piece {
   drawingCoords: { i: number; j: number };
@@ -229,7 +233,7 @@ export default class Piece {
     this.square = newSquare;
     this.square.piece = this;
     oldSquare.piece = null;
-    //
+
     LAST_MOVES = [oldSquare, newSquare];
     this.history.push({ ...this.position! });
 
@@ -239,9 +243,18 @@ export default class Piece {
     let permission: string = "";
 
     const rooks: string[] = [];
-
+    const moves: { black: Square[]; white: Square[] } = {
+      black: [],
+      white: []
+    };
     pieces.forEach((piece) => {
       piece.combineMoves();
+      if (piece.color === "black") {
+        moves.black.push(...piece.availableMoves);
+      } else {
+        moves.white.push(...piece.availableMoves);
+      }
+
       if (piece.type === "rook") {
         if (piece.history.length === 1) {
           if (piece.position!.file === "H" && piece.color === "white") {
