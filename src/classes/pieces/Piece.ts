@@ -178,23 +178,7 @@ export default class Piece {
     }
   }
 
-  public changeSquare(
-    newSquare: Square,
-    fen: FEN,
-    enPassant: typeof Pawn.prototype.canEatOnEnPassant[0] | null
-  ) {
-    // Set the old square to the actual square
-    const oldSquare = this.square;
-
-    // Updating the fen board
-    const fenBoard = fen.updateFenBoard(newSquare, this);
-
-    // Adding the remainings to the fen board, to have a complete fen
-    const newFen = fen.addRemains(fenBoard);
-
-    // Setting the fen to the new one
-    fen.fen = newFen;
-
+  private checkKingType(newSquare: Square, fen: FEN) {
     if (this.type === "king") {
       const king = (this as unknown) as King;
       if (
@@ -212,8 +196,12 @@ export default class Piece {
         }
       }
     }
+  }
 
-    // If enPassant move is made, update the fen
+  private checkEnPassant(
+    enPassant: typeof Pawn.prototype.canEatOnEnPassant[0] | null,
+    fen: FEN
+  ) {
     if (enPassant) {
       const fenBoard = fen.updateFenBoard(enPassant.eatOnSquare, null, {
         square: "0",
@@ -223,8 +211,9 @@ export default class Piece {
       const newFen = fen.addRemains(fenBoard);
       fen.fen = newFen;
     }
+  }
 
-    // Updating the properties of the piece
+  private updateProperties(newSquare: Square, oldSquare: Square) {
     this.drawingCoords = { i: newSquare.coords.i, j: newSquare.coords.j };
     this.position!.file = newSquare.coords.file;
     this.position!.rank = newSquare.coords.rank;
@@ -236,6 +225,31 @@ export default class Piece {
 
     LAST_MOVES = [oldSquare, newSquare];
     this.history.push({ ...this.position! });
+  }
+
+  public changeSquare(
+    newSquare: Square,
+    fen: FEN,
+    enPassant: typeof Pawn.prototype.canEatOnEnPassant[0] | null
+  ) {
+    // Set the old square to the actual square
+    const oldSquare = this.square;
+
+    // Updating the fen board
+    const fenBoard = fen.updateFenBoard(newSquare, this);
+
+    // Adding the remainings to the fen board, to have a complete fen
+    const newFen = fen.addRemains(fenBoard);
+
+    // Setting the fen to the new one
+    fen.fen = newFen;
+
+    this.checkKingType(newSquare, fen);
+
+    // If enPassant move is made, update the fen
+    this.checkEnPassant(enPassant, fen);
+    // Updating the properties of the piece
+    this.updateProperties(newSquare, oldSquare);
 
     /************************* ***********************/
     /******************* PERMISSIONS *****************/

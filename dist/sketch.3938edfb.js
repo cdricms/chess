@@ -21419,7 +21419,7 @@ var __assign = this && this.__assign || function () {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.LAST_MOVES = exports.pieces = exports.pieceSelected = void 0;
+exports.MOVES = exports.LAST_MOVES = exports.pieces = exports.pieceSelected = void 0;
 
 var Grid_1 = require("../Grid");
 
@@ -21430,6 +21430,10 @@ var sketch_2 = require("../../sketch");
 exports.pieceSelected = null;
 exports.pieces = [];
 exports.LAST_MOVES = [];
+exports.MOVES = {
+  black: [],
+  white: []
+};
 
 var Piece =
 /** @class */
@@ -21581,16 +21585,7 @@ function () {
     }
   };
 
-  Piece.prototype.changeSquare = function (newSquare, fen, enPassant) {
-    // Set the old square to the actual square
-    var oldSquare = this.square; // Updating the fen board
-
-    var fenBoard = fen.updateFenBoard(newSquare, this); // Adding the remainings to the fen board, to have a complete fen
-
-    var newFen = fen.addRemains(fenBoard); // Setting the fen to the new one
-
-    fen.fen = newFen;
-
+  Piece.prototype.checkKingType = function (newSquare, fen) {
     if (this.type === "king") {
       var king = this;
 
@@ -21607,20 +21602,22 @@ function () {
           rookSquare.piece.changeSquare(rooksNewSquare, fen, null);
         }
       }
-    } // If enPassant move is made, update the fen
+    }
+  };
 
-
+  Piece.prototype.checkEnPassant = function (enPassant, fen) {
     if (enPassant) {
-      var fenBoard_1 = fen.updateFenBoard(enPassant.eatOnSquare, null, {
+      var fenBoard = fen.updateFenBoard(enPassant.eatOnSquare, null, {
         square: "0",
         i: enPassant.pieceToEat.drawingCoords.i,
         j: enPassant.pieceToEat.drawingCoords.j
       });
-      var newFen_1 = fen.addRemains(fenBoard_1);
-      fen.fen = newFen_1;
-    } // Updating the properties of the piece
+      var newFen = fen.addRemains(fenBoard);
+      fen.fen = newFen;
+    }
+  };
 
-
+  Piece.prototype.updateProperties = function (newSquare, oldSquare) {
     this.drawingCoords = {
       i: newSquare.coords.i,
       j: newSquare.coords.j
@@ -21630,10 +21627,25 @@ function () {
     this.position.fileNumber = this.getFileNumber();
     this.square = newSquare;
     this.square.piece = this;
-    oldSquare.piece = null; //
-
+    oldSquare.piece = null;
     exports.LAST_MOVES = [oldSquare, newSquare];
     this.history.push(__assign({}, this.position));
+  };
+
+  Piece.prototype.changeSquare = function (newSquare, fen, enPassant) {
+    // Set the old square to the actual square
+    var oldSquare = this.square; // Updating the fen board
+
+    var fenBoard = fen.updateFenBoard(newSquare, this); // Adding the remainings to the fen board, to have a complete fen
+
+    var newFen = fen.addRemains(fenBoard); // Setting the fen to the new one
+
+    fen.fen = newFen;
+    this.checkKingType(newSquare, fen); // If enPassant move is made, update the fen
+
+    this.checkEnPassant(enPassant, fen); // Updating the properties of the piece
+
+    this.updateProperties(newSquare, oldSquare);
     /************************* ***********************/
 
     /******************* PERMISSIONS *****************/
@@ -21642,8 +21654,20 @@ function () {
 
     var permission = "";
     var rooks = [];
+    var moves = {
+      black: [],
+      white: []
+    };
     exports.pieces.forEach(function (piece) {
+      var _a, _b;
+
       piece.combineMoves();
+
+      if (piece.color === "black") {
+        (_a = moves.black).push.apply(_a, piece.availableMoves);
+      } else {
+        (_b = moves.white).push.apply(_b, piece.availableMoves);
+      }
 
       if (piece.type === "rook") {
         if (piece.history.length === 1) {
@@ -22862,7 +22886,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60364" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "35161" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
